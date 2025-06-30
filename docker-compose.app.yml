@@ -1,0 +1,53 @@
+# Application services configuration
+# Includes backend and frontend services
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.app.yml up
+
+version: '3.8'
+
+services:
+  backend:
+    image: bakery_backend:latest
+    container_name: bakery_backend
+    ports:
+      - "${BACKEND_PORT:-5000}:5000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-bakery_user}:${POSTGRES_PASSWORD:-bakery_pass}@postgres:5432/${POSTGRES_DB:-bakery_db}
+      REDIS_URL: redis://redis:6379
+      CLERK_JWKS_URL: ${CLERK_JWKS_URL}
+      SECRET_KEY: ${SECRET_KEY}
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+    volumes:
+      - ./docker/volumes/uploads:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - bakery_network
+    restart: unless-stopped
+
+  frontend:
+    image: bakery_frontend:latest
+    container_name: bakery_frontend
+    ports:
+      - "${FRONTEND_PORT:-5173}:5173"
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:5000/api}
+      VITE_CLERK_PUBLISHABLE_KEY: ${VITE_CLERK_PUBLISHABLE_KEY}
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5173"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - bakery_network
+    restart: unless-stopped

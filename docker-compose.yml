@@ -1,0 +1,10 @@
+# Base Docker Compose configuration
+# This file only defines networks and basic configuration
+# Use with other compose files for complete setup
+
+version: '3.8'
+
+networks:
+  bakery_network:
+    driver: bridge
+    name: bakery_network

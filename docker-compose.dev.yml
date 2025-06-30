@@ -1,0 +1,41 @@
+# Development overrides for Docker Compose
+# Adds hot reload, debug settings, and development volumes
+# Usage: docker-compose -f docker-compose.yml -f docker-compose.database.yml -f docker-compose.app.yml -f docker-compose.dev.yml up
+
+version: '3.8'
+
+services:
+  postgres:
+    ports:
+      - "5432:5432"  # Expose for external tools
+
+  backend:
+    volumes:
+      - ./apps/backend:/app
+      - /app/__pycache__
+      - /app/.venv
+      - ./docker/volumes/uploads:/app/uploads
+    environment:
+      ENVIRONMENT: development
+      LOG_LEVEL: DEBUG
+      RELOAD: "true"
+    command: uvicorn main:app --host 0.0.0.0 --port 5000 --reload
+    restart: "no"  # Don't restart in development
+
+  frontend:
+    volumes:
+      - ./apps/frontend:/app
+      - /app/node_modules
+      - /app/.vite
+    environment:
+      NODE_ENV: development
+    command: npm run dev -- --host 0.0.0.0 --port 5173
+    restart: "no"  # Don't restart in development
+
+  nginx:
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      # Enable live reload of nginx config
+    command: nginx -g 'daemon off;'
+    restart: "no"  # Don't restart in development

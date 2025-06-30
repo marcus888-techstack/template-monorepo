@@ -1,0 +1,32 @@
+# Development Dockerfile for FastAPI backend
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    postgresql-client \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install development tools
+RUN pip install --no-cache-dir \
+    black \
+    ruff \
+    pytest \
+    pytest-cov \
+    pytest-asyncio
+
+# Copy requirements
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install Prisma
+RUN pip install prisma
+
+# Expose port
+EXPOSE 5000
+
+# Keep container running
+CMD ["tail", "-f", "/dev/null"]
