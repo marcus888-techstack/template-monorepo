@@ -1,13 +1,18 @@
 # API Documentation
 
 ## Overview
-The Bakery Website API is a RESTful API built with Express.js that provides endpoints for product management, shopping cart operations, order processing, and user management. All endpoints return JSON responses and require appropriate authentication.
+The unified API is a RESTful API built with FastAPI that serves both the landing site and web application. It provides endpoints for content management, collection operations, activity processing, and user management. All endpoints return JSON responses, with public endpoints available for the landing site and protected endpoints requiring authentication for the web application.
 
 ## Base URL
 ```
 Development: http://localhost:5000/api
-Production: https://api.yourdomain.com/api
+Production: https://app.yourdomain.com/api
 ```
+
+## API Architecture
+The API serves two distinct applications:
+- **Landing Site** (`yourdomain.com`): Uses public endpoints for content display
+- **Web Application** (`app.yourdomain.com`): Uses authenticated endpoints for full functionality
 
 ## Authentication
 The API uses JWT token verification for authentication. The frontend uses Clerk to authenticate users and obtain JWT tokens. All protected endpoints require a valid Bearer token in the Authorization header.
@@ -92,9 +97,62 @@ async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(s
 
 ## API Endpoints
 
+### Public Endpoints (Landing & Web)
+These endpoints are accessible without authentication and are used by both the landing site and web application.
+
+#### Get Featured Items
+```http
+GET /api/public/items/featured
+```
+
+Get featured items for homepage display.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "cuid",
+      "name": "[Item Name]",
+      "description": "[Description]",
+      "metadata": "[Domain-specific data]",
+      "image": "https://example.com/image.jpg",
+      "category": {
+        "name": "[Category]",
+        "slug": "category-slug"
+      }
+    }
+  ]
+}
+```
+
+#### Get Public Categories
+```http
+GET /api/public/categories
+```
+
+Get all categories for navigation.
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": "cuid",
+      "name": "[Category Name]",
+      "slug": "category-slug",
+      "displayOrder": 1,
+      "itemCount": 15
+    }
+  ]
+}
+```
+
 ### Authentication Endpoints
 
-Since authentication is handled entirely by Clerk on the frontend, the backend only needs to verify tokens and sync user data.
+Authentication is handled entirely by Clerk on the frontend. The backend only verifies tokens and syncs user data.
 
 ---
 
@@ -116,7 +174,7 @@ Get the current authenticated user's profile.
     "clerkId": "user_xxx",
     "email": "user@example.com",
     "name": "John Doe",
-    "role": "CUSTOMER",
+    "role": "USER",
     "createdAt": "2024-01-01T00:00:00Z"
   }
 }
@@ -145,7 +203,7 @@ Update the current user's profile information.
 GET /api/categories
 ```
 
-Get all product categories.
+Get all content categories.
 
 **Response:**
 ```json
@@ -154,24 +212,24 @@ Get all product categories.
   "data": [
     {
       "id": "cuid",
-      "name": "Cake",
-      "slug": "cake",
-      "description": "Delicious cakes for all occasions",
+      "name": "[Type A]",
+      "slug": "type-a",
+      "description": "[Category description]",
       "displayOrder": 1,
       "_count": {
-        "products": 15
+        "items": 15
       }
     }
   ]
 }
 ```
 
-#### Get Category Products
+#### Get Category Items
 ```http
-GET /api/categories/:slug/products
+GET /api/categories/:slug/items
 ```
 
-Get all products in a specific category.
+Get all items in a specific category.
 
 **Parameters:**
 - `slug` (path): Category slug
@@ -183,22 +241,22 @@ Get all products in a specific category.
 
 ---
 
-### Product Endpoints
+### Content Endpoints
 
-#### List Products
+#### List Items
 ```http
-GET /api/products
+GET /api/items
 ```
 
-Get all products with optional filtering.
+Get all items with optional filtering.
 
 **Query Parameters:**
 - `page` (optional): Page number (default: 1)
 - `limit` (optional): Items per page (default: 12)
 - `category` (optional): Filter by category slug
-- `featured` (optional): Filter featured products (true/false)
+- `featured` (optional): Filter featured items (true/false)
 - `search` (optional): Search by name or description
-- `sort` (optional): Sort by price_asc, price_desc, name_asc, name_desc, created_desc
+- `sort` (optional): Sort by metadata_asc, metadata_desc, name_asc, name_desc, created_desc
 
 **Response:**
 ```json
@@ -232,15 +290,15 @@ Get all products with optional filtering.
 }
 ```
 
-#### Get Product Details
+#### Get Item Details
 ```http
-GET /api/products/:id
+GET /api/items/:id
 ```
 
-Get detailed information about a specific product.
+Get detailed information about a specific item.
 
 **Parameters:**
-- `id` (path): Product ID
+- `id` (path): Item ID
 
 **Response:**
 ```json
@@ -248,77 +306,77 @@ Get detailed information about a specific product.
   "success": true,
   "data": {
     "id": "cuid",
-    "name": "Chocolate Cake",
-    "description": "Rich chocolate cake with ganache",
-    "price": 35.00,
-    "image": "https://example.com/chocolate-cake.jpg",
+    "name": "[Item Name]",
+    "description": "[Item description]",
+    "metadata": "[domain-specific data]",
+    "image": "https://example.com/item-image.jpg",
     "category": {
       "id": "cuid",
-      "name": "Cake",
-      "slug": "cake"
+      "name": "[Type A]",
+      "slug": "type-a"
     },
     "featured": true,
-    "inStock": true,
-    "stockQuantity": 20,
+    "available": true,
+    "quantity": 20,
     "createdAt": "2024-01-01T00:00:00Z",
     "updatedAt": "2024-01-01T00:00:00Z"
   }
 }
 ```
 
-#### Create Product (Admin)
+#### Create Item (Admin)
 ```http
-POST /api/products
+POST /api/items
 ```
 
-Create a new product. Requires admin role.
+Create a new item. Requires admin role.
 
 **Body:**
 ```json
 {
-  "name": "Red Velvet Cake",
-  "description": "Classic red velvet with cream cheese frosting",
-  "price": 40.00,
+  "name": "[Item Name]",
+  "description": "[Item description]",
+  "metadata": "[domain-specific data]",
   "categoryId": "cuid",
   "featured": false,
-  "stockQuantity": 15
+  "quantity": 15
 }
 ```
 
 **Note:** Image upload is handled separately via `/api/upload` endpoint.
 
-#### Update Product (Admin)
+#### Update Item (Admin)
 ```http
-PUT /api/products/:id
+PUT /api/items/:id
 ```
 
-Update an existing product. Requires admin role.
+Update an existing item. Requires admin role.
 
 **Parameters:**
-- `id` (path): Product ID
+- `id` (path): Item ID
 
 **Body:** Same as create, all fields optional
 
-#### Delete Product (Admin)
+#### Delete Item (Admin)
 ```http
-DELETE /api/products/:id
+DELETE /api/items/:id
 ```
 
-Delete a product. Requires admin role.
+Delete an item. Requires admin role.
 
 **Parameters:**
-- `id` (path): Product ID
+- `id` (path): Item ID
 
 ---
 
-### Cart Endpoints
+### Collection Endpoints
 
-#### Get Cart
+#### Get Collection
 ```http
-GET /api/cart
+GET /api/collections
 ```
 
-Get the current user's shopping cart.
+Get the current user's collection.
 
 **Response:**
 ```json
@@ -330,45 +388,45 @@ Get the current user's shopping cart.
       {
         "id": "cuid",
         "quantity": 2,
-        "product": {
+        "item": {
           "id": "cuid",
-          "name": "Chocolate Cake",
-          "price": 35.00,
-          "image": "https://example.com/chocolate-cake.jpg",
-          "inStock": true
+          "name": "[Item Name]",
+          "metadata": "[domain-specific data]",
+          "image": "https://example.com/item-image.jpg",
+          "available": true
         }
       }
     ],
-    "subtotal": 70.00,
+    "totalData": "[calculated data]",
     "itemCount": 2
   }
 }
 ```
 
-#### Add to Cart
+#### Add to Collection
 ```http
-POST /api/cart/items
+POST /api/collections/items
 ```
 
-Add a product to the cart.
+Add an item to the collection.
 
 **Body:**
 ```json
 {
-  "productId": "cuid",
+  "itemId": "cuid",
   "quantity": 1
 }
 ```
 
-#### Update Cart Item
+#### Update Collection Item
 ```http
-PUT /api/cart/items/:id
+PUT /api/collections/items/:id
 ```
 
-Update quantity of a cart item.
+Update quantity of a collection item.
 
 **Parameters:**
-- `id` (path): Cart item ID
+- `id` (path): Collection item ID
 
 **Body:**
 ```json
@@ -377,44 +435,43 @@ Update quantity of a cart item.
 }
 ```
 
-#### Remove from Cart
+#### Remove from Collection
 ```http
-DELETE /api/cart/items/:id
+DELETE /api/collections/items/:id
 ```
 
-Remove an item from the cart.
+Remove an item from the collection.
 
 **Parameters:**
-- `id` (path): Cart item ID
+- `id` (path): Collection item ID
 
-#### Clear Cart
+#### Clear Collection
 ```http
-DELETE /api/cart
+DELETE /api/collections
 ```
 
-Remove all items from the cart.
+Remove all items from the collection.
 
 ---
 
-### Order Endpoints
+### Activity Endpoints
 
-#### Create Order
+#### Create Activity
 ```http
-POST /api/orders
+POST /api/activities
 ```
 
-Create a new order from the current cart.
+Create a new activity from the current collection.
 
 **Body:**
 ```json
 {
-  "customerName": "John Doe",
-  "customerEmail": "john@example.com",
-  "customerPhone": "+1234567890",
-  "deliveryMethod": "PICKUP",
-  "deliveryAddress": "123 Main St, City, State 12345",
-  "deliveryDate": "2024-01-15T10:00:00Z",
-  "notes": "Please call when ready"
+  "userInfo": "John Doe",
+  "contactInfo": "john@example.com",
+  "method": "ONLINE",
+  "location": "123 Main St, City, State 12345",
+  "scheduledDate": "2024-01-15T10:00:00Z",
+  "notes": "[Additional notes]"
 }
 ```
 
@@ -424,20 +481,20 @@ Create a new order from the current cart.
   "success": true,
   "data": {
     "id": "cuid",
-    "orderNumber": "ORD-20240101-001",
+    "activityNumber": "ACT-20240101-001",
     "status": "PENDING",
-    "total": 75.00,
+    "data": "[calculated data]",
     "createdAt": "2024-01-01T00:00:00Z"
   }
 }
 ```
 
-#### List Orders
+#### List Activities
 ```http
-GET /api/orders
+GET /api/activities
 ```
 
-Get all orders for the current user (or all orders for admin).
+Get all activities for the current user (or all activities for admin).
 
 **Query Parameters:**
 - `page` (optional): Page number (default: 1)
@@ -452,9 +509,9 @@ Get all orders for the current user (or all orders for admin).
     "items": [
       {
         "id": "cuid",
-        "orderNumber": "ORD-20240101-001",
+        "activityNumber": "ACT-20240101-001",
         "status": "COMPLETED",
-        "total": 75.00,
+        "data": "[calculated data]",
         "itemCount": 2,
         "createdAt": "2024-01-01T00:00:00Z"
       }
@@ -469,15 +526,15 @@ Get all orders for the current user (or all orders for admin).
 }
 ```
 
-#### Get Order Details
+#### Get Activity Details
 ```http
-GET /api/orders/:id
+GET /api/activities/:id
 ```
 
-Get detailed information about a specific order.
+Get detailed information about a specific activity.
 
 **Parameters:**
-- `id` (path): Order ID
+- `id` (path): Activity ID
 
 **Response:**
 ```json
@@ -485,43 +542,42 @@ Get detailed information about a specific order.
   "success": true,
   "data": {
     "id": "cuid",
-    "orderNumber": "ORD-20240101-001",
+    "activityNumber": "ACT-20240101-001",
     "status": "COMPLETED",
     "items": [
       {
         "id": "cuid",
         "quantity": 2,
-        "unitPrice": 35.00,
-        "totalPrice": 70.00,
-        "product": {
+        "itemData": "[item-specific data]",
+        "totalData": "[calculated total]",
+        "item": {
           "id": "cuid",
-          "name": "Chocolate Cake",
-          "image": "https://example.com/chocolate-cake.jpg"
+          "name": "[Item Name]",
+          "image": "https://example.com/item-image.jpg"
         }
       }
     ],
-    "subtotal": 70.00,
-    "tax": 5.00,
-    "total": 75.00,
-    "customerName": "John Doe",
-    "customerEmail": "john@example.com",
-    "customerPhone": "+1234567890",
-    "deliveryMethod": "PICKUP",
-    "deliveryDate": "2024-01-15T10:00:00Z",
+    "data": "[total calculated data]",
+    "userInfo": "John Doe",
+    "contactInfo": "john@example.com",
+    "method": "ONLINE",
+    "location": "123 Main St, City, State 12345",
+    "scheduledDate": "2024-01-15T10:00:00Z",
+    "notes": "[Additional notes]",
     "createdAt": "2024-01-01T00:00:00Z"
   }
 }
 ```
 
-#### Update Order Status (Admin)
+#### Update Activity Status (Admin)
 ```http
-PUT /api/orders/:id/status
+PUT /api/activities/:id/status
 ```
 
-Update the status of an order. Requires admin role.
+Update the status of an activity. Requires admin role.
 
 **Parameters:**
-- `id` (path): Order ID
+- `id` (path): Activity ID
 
 **Body:**
 ```json
@@ -539,14 +595,14 @@ Update the status of an order. Requires admin role.
 
 ---
 
-### File Upload Endpoints (Multer)
+### File Upload Endpoints
 
-#### Upload Product Image
+#### Upload Item Image
 ```http
-POST /api/upload/product
+POST /api/upload/item
 ```
 
-Upload a product image using Multer.
+Upload an item image using multipart form data.
 
 **Headers:**
 ```
@@ -562,21 +618,21 @@ Authorization: Bearer <token>
 {
   "success": true,
   "data": {
-    "url": "/uploads/products/1704067200000-chocolate-cake.jpg",
-    "filename": "1704067200000-chocolate-cake.jpg",
-    "originalName": "chocolate-cake.jpg",
+    "url": "/uploads/items/1704067200000-item-image.jpg",
+    "filename": "1704067200000-item-image.jpg",
+    "originalName": "item-image.jpg",
     "mimetype": "image/jpeg",
     "size": 102400
   }
 }
 ```
 
-#### Upload Multiple Product Images
+#### Upload Multiple Item Images
 ```http
-POST /api/upload/products
+POST /api/upload/items
 ```
 
-Upload multiple product images (max 5 files).
+Upload multiple item images (max 5 files).
 
 **Headers:**
 ```
@@ -594,12 +650,12 @@ Authorization: Bearer <token>
   "data": {
     "files": [
       {
-        "url": "/uploads/products/1704067200000-image1.jpg",
+        "url": "/uploads/items/1704067200000-image1.jpg",
         "filename": "1704067200000-image1.jpg",
         "size": 102400
       },
       {
-        "url": "/uploads/products/1704067200001-image2.jpg",
+        "url": "/uploads/items/1704067200001-image2.jpg",
         "filename": "1704067200001-image2.jpg",
         "size": 98304
       }
@@ -611,8 +667,51 @@ Authorization: Bearer <token>
 **File Upload Configuration:**
 - Maximum file size: 5MB per file
 - Accepted formats: JPEG, PNG, WebP
-- Storage location: `./uploads/products` (development)
-- Files served from: `http://localhost:5000/uploads/products/`
+- Storage location: `./uploads/items` (development)
+- Files served from: `http://localhost:5000/uploads/items/`
+
+---
+
+### Landing Site Specific Endpoints
+
+#### Submit Contact Form
+```http
+POST /api/public/contact
+```
+
+Submit contact form from landing page.
+
+**Body:**
+```json
+{
+  "name": "John Doe",
+  "email": "john@example.com",
+  "message": "Inquiry message",
+  "subject": "General Inquiry"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Contact form submitted successfully"
+}
+```
+
+#### Subscribe to Newsletter
+```http
+POST /api/public/newsletter
+```
+
+Subscribe email to newsletter.
+
+**Body:**
+```json
+{
+  "email": "user@example.com"
+}
+```
 
 ---
 
@@ -630,13 +729,13 @@ Get dashboard statistics. Requires admin role.
 {
   "success": true,
   "data": {
-    "totalOrders": 150,
-    "pendingOrders": 5,
-    "totalRevenue": 12500.00,
-    "totalProducts": 48,
+    "totalActivities": 150,
+    "pendingActivities": 5,
+    "totalData": "[aggregated metrics]",
+    "totalItems": 48,
     "totalUsers": 230,
-    "recentOrders": [ ... ],
-    "popularProducts": [ ... ]
+    "recentActivities": [ ... ],
+    "popularItems": [ ... ]
   }
 }
 ```
@@ -650,16 +749,17 @@ Get dashboard statistics. Requires admin role.
 | `NOT_FOUND` | Resource not found |
 | `VALIDATION_ERROR` | Invalid input data |
 | `DUPLICATE_ENTRY` | Resource already exists |
-| `OUT_OF_STOCK` | Product is out of stock |
-| `CART_EMPTY` | Cart is empty |
+| `UNAVAILABLE` | Item is unavailable |
+| `COLLECTION_EMPTY` | Collection is empty |
 | `INTERNAL_ERROR` | Server error |
 
 ## Rate Limiting
 
 API endpoints are rate-limited to prevent abuse:
-- Public endpoints: 100 requests per minute
-- Authenticated endpoints: 300 requests per minute
-- Admin endpoints: 500 requests per minute
+- Public endpoints: 100 requests per minute per IP
+- Landing site endpoints: 200 requests per minute per IP
+- Authenticated endpoints: 300 requests per minute per user
+- Admin endpoints: 500 requests per minute per user
 
 Rate limit headers:
 ```
@@ -670,21 +770,21 @@ X-RateLimit-Reset: 1609459200
 
 ## Webhooks
 
-### Order Status Update
+### Activity Status Update
 ```http
-POST https://your-webhook-url.com/order-status
+POST https://your-webhook-url.com/activity-status
 ```
 
-Triggered when an order status changes.
+Triggered when an activity status changes.
 
 **Payload:**
 ```json
 {
-  "event": "order.status.updated",
+  "event": "activity.status.updated",
   "timestamp": "2024-01-01T00:00:00Z",
   "data": {
-    "orderId": "cuid",
-    "orderNumber": "ORD-20240101-001",
+    "activityId": "cuid",
+    "activityNumber": "ACT-20240101-001",
     "oldStatus": "PENDING",
     "newStatus": "PROCESSING",
     "userId": "cuid"
@@ -696,17 +796,17 @@ Triggered when an order status changes.
 
 ### Using cURL
 
-Get products:
+Get items:
 ```bash
-curl -X GET http://localhost:5000/api/products
+curl -X GET http://localhost:5000/api/items
 ```
 
-Add to cart (with auth):
+Add to collection (with auth):
 ```bash
-curl -X POST http://localhost:5000/api/cart/items \
+curl -X POST http://localhost:5000/api/collections/items \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"productId":"cuid","quantity":1}'
+  -d '{"itemId":"cuid","quantity":1}'
 ```
 
 ### Using Postman
@@ -716,17 +816,56 @@ Import the Postman collection from `/docs/postman-collection.json` for a complet
 ## SDK Usage
 
 ### JavaScript/TypeScript
-```typescript
-import { BakeryAPI } from '@bakery/sdk';
 
-const api = new BakeryAPI({
+#### Landing Site SDK
+```typescript
+import { LandingAPI } from '@[project]/sdk';
+
+const api = new LandingAPI({
+  baseURL: 'http://localhost:5000/api'
+});
+
+// Get featured items
+const featured = await api.public.getFeaturedItems();
+
+// Submit contact form
+await api.public.submitContact({
+  name: 'John Doe',
+  email: 'john@example.com',
+  message: 'Inquiry'
+});
+```
+
+#### Web Application SDK
+```typescript
+import { WebAppAPI } from '@[project]/sdk';
+
+const api = new WebAppAPI({
   baseURL: 'http://localhost:5000/api',
   getToken: async () => await clerk.session?.getToken()
 });
 
-// Get products
-const products = await api.products.list({ featured: true });
+// Get items
+const items = await api.items.list({ featured: true });
 
-// Add to cart
-await api.cart.addItem({ productId: 'cuid', quantity: 2 });
+// Add to collection
+await api.collections.addItem({ itemId: 'cuid', quantity: 2 });
+```
+
+## CORS Configuration
+
+### Development
+```python
+CORS_ORIGINS = [
+    "http://localhost:3000",  # Landing site
+    "http://localhost:5173",  # Web application
+]
+```
+
+### Production
+```python
+CORS_ORIGINS = [
+    "https://yourdomain.com",      # Landing site
+    "https://app.yourdomain.com",  # Web application
+]
 ```

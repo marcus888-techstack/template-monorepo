@@ -1,24 +1,37 @@
 # UI Specification & Design System
 
 ## Overview
-This document defines the visual design system and component specifications for the Bakery Website, based on the Figma design. It includes color schemes, typography, spacing, components, and responsive design guidelines.
+This document defines the visual design system and component specifications for both the landing site and web application. Both applications use **shadcn/ui** as the foundation for all UI components, ensuring consistency, accessibility, and customizability. While maintaining visual consistency across both applications, each has specific design considerations optimized for its purpose.
 
 ## Design Principles
 
-1. **Clean & Modern**: Minimalist design with focus on product imagery
-2. **Warm & Inviting**: Use of warm colors and friendly typography
-3. **User-Friendly**: Intuitive navigation and clear call-to-actions
-4. **Responsive**: Mobile-first approach with adaptive layouts
-5. **Accessible**: WCAG 2.1 AA compliance
+### Shared Principles
+1. **Clean & Modern**: Minimalist design with focus on content
+2. **Visual Hierarchy**: Clear structure and information flow
+3. **Responsive**: Mobile-first approach with adaptive layouts
+4. **Accessible**: WCAG 2.1 AA compliance
+5. **Brand Consistency**: Unified visual language
+
+### Landing Site Specific
+1. **Conversion-Focused**: Clear CTAs and user journey
+2. **Fast Loading**: Optimized assets and minimal JavaScript
+3. **SEO-Friendly**: Semantic HTML and structured data
+4. **Engaging**: Eye-catching visuals and animations
+
+### Web Application Specific
+1. **Functional**: Efficient task completion
+2. **Information Dense**: Display complex data clearly
+3. **Interactive**: Rich user interactions
+4. **Consistent**: Predictable UI patterns
 
 ## Color Palette
 
 ### Primary Colors
 ```css
 :root {
-  --primary-brown: #933C24;      /* Main brand color */
-  --primary-gold: #E9BD8C;       /* Accent color */
-  --primary-cream: #F9F6F1;      /* Background color */
+  --primary-main: #933C24;       /* Main brand color */
+  --primary-accent: #E9BD8C;     /* Accent color */
+  --primary-light: #F9F6F1;      /* Light background color */
 }
 ```
 
@@ -143,217 +156,482 @@ Using an 8px base unit:
 
 ## Component Specifications
 
-### 1. Navigation Header
+### shadcn/ui Foundation
+
+All components in the project are built on top of **shadcn/ui**, which provides:
+- **Accessibility**: Built with Radix UI primitives for full keyboard navigation and screen reader support
+- **Customization**: Tailwind CSS based styling that can be easily modified
+- **TypeScript**: Full type safety out of the box
+- **Copy & Paste**: Components are copied into the codebase for full control
+
+### Component Library Setup
+
+```bash
+# Initialize shadcn/ui in each app
+cd apps/landing
+npx shadcn-ui@latest init
+
+cd apps/web
+npx shadcn-ui@latest init
+
+# Add components as needed
+npx shadcn-ui@latest add button
+npx shadcn-ui@latest add card
+npx shadcn-ui@latest add dialog
+npx shadcn-ui@latest add form
+npx shadcn-ui@latest add navigation-menu
+```
+
+### Shared Components (via @project/ui)
+
+The shared UI package extends shadcn/ui components with project-specific customizations:
+
+#### Extended Button Component
+```typescript
+// packages/ui/src/Button.tsx
+import { Button as ShadcnButton } from '@/components/ui/button'
+import { cn } from '@/lib/utils'
+
+export const Button = ({ className, ...props }) => {
+  return (
+    <ShadcnButton
+      className={cn(
+        // Add project-specific default styles
+        'font-poppins',
+        className
+      )}
+      {...props}
+    />
+  )
+}
+```
+
+#### Extended Card Component
+```typescript
+// packages/ui/src/Card.tsx
+import { Card as ShadcnCard } from '@/components/ui/card'
+
+export const Card = ShadcnCard
+export const CardHeader = ShadcnCard.Header
+export const CardContent = ShadcnCard.Content
+export const CardFooter = ShadcnCard.Footer
+```
+
+### Landing Site Components
+
+#### 1. Landing Navigation
 ```css
-.navbar {
+.landing-nav {
   height: 80px;
-  background: transparent;
-  padding: 0 var(--space-4xl);
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1000;
+  transition: all 0.3s ease;
 }
 
-.nav-link {
+.landing-nav.scrolled {
+  box-shadow: 0 2px 20px rgba(0, 0, 0, 0.1);
+}
+
+.landing-nav-link {
   font-family: 'Poppins', sans-serif;
-  font-size: 22px;
-  font-weight: 600;
-  color: var(--neutral-black);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--neutral-dark);
   transition: color 0.2s ease;
 }
 
-.nav-link:hover {
-  color: var(--primary-gold);
-}
-
-.nav-link.active {
-  color: var(--primary-gold);
+.landing-nav-link:hover {
+  color: var(--primary-main);
 }
 ```
 
-### 2. Hero Section
+### Web Application Components
+
+#### 1. App Navigation
 ```css
-.hero {
-  height: 813px;
-  background-image: url('/hero-bg.jpg');
-  background-size: cover;
-  background-position: center;
-  position: relative;
-}
-
-.hero-content {
-  padding: 318px 80px;
-}
-
-.hero-title {
-  font-family: 'Sansita Swashed', cursive;
-  font-size: 74px;
-  color: var(--neutral-black);
-  max-width: 424px;
-}
-
-.hero-subtitle {
-  font-family: 'Inter', sans-serif;
-  font-size: 24px;
-  color: var(--primary-gold);
-  margin-bottom: var(--space-xl);
-}
-```
-
-### 3. Product Card
-```css
-.product-card {
-  width: 360px;
-  height: 411px;
+.app-navbar {
+  height: 64px;
   background: var(--white);
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease;
+  border-bottom: 1px solid var(--neutral-border);
+  padding: 0 var(--space-lg);
 }
 
-.product-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-}
-
-.product-image {
-  width: 100%;
-  height: 240px;
-  object-fit: cover;
-}
-
-.product-info {
-  padding: var(--space-lg);
-}
-
-.product-name {
+.app-nav-link {
   font-family: 'Inter', sans-serif;
-  font-size: 24px;
+  font-size: 14px;
   font-weight: 500;
-  color: var(--neutral-black);
-  margin-bottom: var(--space-sm);
+  color: var(--neutral-dark);
+  transition: all 0.2s ease;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: 6px;
 }
 
-.product-price {
-  font-family: 'Inter', sans-serif;
-  font-size: 24px;
-  font-weight: 600;
+.app-nav-link:hover {
+  background: var(--neutral-bg);
   color: var(--neutral-black);
 }
 
-.add-button {
-  background: var(--primary-brown);
-  color: var(--white);
-  padding: 16px 12px;
-  border-radius: 4px;
-  font-family: 'Inter', sans-serif;
-  font-size: 24px;
-  font-weight: 500;
-  border: none;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.add-button:hover {
-  background: #7A3220;
+.app-nav-link.active {
+  background: var(--primary-light);
+  color: var(--primary-main);
 }
 ```
 
-### 4. Category Tabs
+### 2. Landing Hero Section
 ```css
-.category-tabs {
-  display: flex;
-  gap: var(--space-xl);
-  padding: var(--space-lg) 0;
-  border-bottom: 1px solid var(--neutral-border);
+.landing-hero {
+  min-height: 100vh;
+  background: linear-gradient(135deg, var(--primary-light) 0%, var(--white) 100%);
+  position: relative;
+  overflow: hidden;
 }
 
-.category-tab {
+.landing-hero-content {
+  padding: 120px 80px 80px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.landing-hero-title {
+  font-family: 'Sansita Swashed', cursive;
+  font-size: clamp(48px, 8vw, 74px);
+  color: var(--neutral-black);
+  line-height: 1.2;
+  margin-bottom: var(--space-lg);
+}
+
+.landing-hero-subtitle {
+  font-family: 'Inter', sans-serif;
+  font-size: clamp(18px, 3vw, 24px);
+  color: var(--neutral-dark);
+  margin-bottom: var(--space-2xl);
+  max-width: 600px;
+}
+
+.landing-hero-cta {
+  display: flex;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+
+/* Animated background elements */
+.landing-hero-bg-element {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--primary-accent);
+  opacity: 0.1;
+  animation: float 20s infinite ease-in-out;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(180deg); }
+}
+```
+
+### 3. Content Cards (Different Styles)
+
+#### Landing Site - Feature Card
+```css
+.landing-feature-card {
+  background: var(--white);
+  border-radius: 16px;
+  padding: var(--space-2xl);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+  height: 100%;
+}
+
+.landing-feature-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+.landing-feature-icon {
+  width: 64px;
+  height: 64px;
+  background: var(--primary-light);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: var(--space-lg);
+}
+
+.landing-feature-title {
   font-family: 'Poppins', sans-serif;
   font-size: 24px;
   font-weight: 600;
+  color: var(--neutral-black);
+  margin-bottom: var(--space-md);
+}
+
+.landing-feature-description {
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
   color: var(--neutral-dark);
-  padding-bottom: var(--space-sm);
-  border-bottom: 3px solid transparent;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.category-tab:hover {
-  color: var(--primary-brown);
-}
-
-.category-tab.active {
-  color: var(--primary-brown);
-  border-bottom-color: var(--primary-brown);
 }
 ```
 
-### 5. Buttons
+#### Web Application - Item Card
 ```css
-/* Primary Button */
-.btn-primary {
-  background: var(--primary-brown);
-  color: var(--white);
-  padding: 24px 38px;
+.app-item-card {
+  background: var(--white);
+  border: 1px solid var(--neutral-border);
   border-radius: 8px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-item-card:hover {
+  border-color: var(--primary-main);
+  box-shadow: 0 4px 12px rgba(147, 60, 36, 0.1);
+}
+
+.app-item-image {
+  width: 100%;
+  aspect-ratio: 4/3;
+  object-fit: cover;
+}
+
+.app-item-content {
+  padding: var(--space-md);
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-item-title {
   font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--neutral-black);
+  margin-bottom: var(--space-xs);
+}
+
+.app-item-meta {
+  font-family: 'Inter', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--primary-main);
+  margin-top: auto;
+}
+
+.app-item-actions {
+  padding: var(--space-md);
+  border-top: 1px solid var(--neutral-border);
+  display: flex;
+  gap: var(--space-sm);
+}
+```
+
+### 4. Category Navigation
+
+#### Landing Site - Category Showcase
+```css
+.landing-category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-xl);
+  margin: var(--space-3xl) 0;
+}
+
+.landing-category-card {
+  background: var(--white);
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.landing-category-card:hover {
+  transform: scale(1.05);
+}
+
+.landing-category-image {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.landing-category-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+  padding: var(--space-xl) var(--space-lg) var(--space-lg);
+}
+
+.landing-category-name {
+  font-family: 'Poppins', sans-serif;
   font-size: 24px;
   font-weight: 600;
-  border: 1px solid var(--neutral-black);
+  color: var(--white);
+}
+```
+
+#### Web Application - Category Tabs
+```css
+.app-category-tabs {
+  display: flex;
+  gap: var(--space-sm);
+  padding: var(--space-md) 0;
+  border-bottom: 1px solid var(--neutral-border);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.app-category-tab {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--neutral-dark);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: 20px;
+  white-space: nowrap;
   cursor: pointer;
   transition: all 0.2s ease;
+  background: var(--neutral-bg);
 }
 
-.btn-primary:hover {
-  background: #7A3220;
-  transform: translateY(-2px);
+.app-category-tab:hover {
+  background: var(--primary-light);
+  color: var(--primary-main);
 }
 
-/* Secondary Button */
-.btn-secondary {
-  background: transparent;
-  color: var(--primary-gold);
-  padding: 23px 35px;
-  border-radius: 10px;
-  font-family: 'Inter', sans-serif;
-  font-size: 24px;
+.app-category-tab.active {
+  background: var(--primary-main);
+  color: var(--white);
+}
+```
+
+### 5. Button Styles
+
+#### Landing Site Buttons
+```css
+/* Landing Primary CTA */
+.landing-btn-primary {
+  background: var(--primary-main);
+  color: var(--white);
+  padding: 18px 36px;
+  border-radius: 50px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 18px;
   font-weight: 600;
   border: none;
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 14px rgba(147, 60, 36, 0.25);
+}
+
+.landing-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(147, 60, 36, 0.35);
+}
+
+/* Landing Secondary CTA */
+.landing-btn-secondary {
+  background: transparent;
+  color: var(--primary-main);
+  padding: 18px 36px;
+  border-radius: 50px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  border: 2px solid var(--primary-main);
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.landing-btn-secondary:hover {
+  background: var(--primary-main);
+  color: var(--white);
+}
+```
+
+#### Web Application Buttons
+```css
+/* App Primary Button */
+.app-btn-primary {
+  background: var(--primary-main);
+  color: var(--white);
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.btn-secondary:hover {
-  color: var(--primary-brown);
-  transform: translateX(4px);
+.app-btn-primary:hover {
+  background: #7A3220;
+}
+
+.app-btn-primary:active {
+  transform: scale(0.98);
+}
+
+/* App Secondary Button */
+.app-btn-secondary {
+  background: var(--neutral-bg);
+  color: var(--neutral-black);
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1px solid var(--neutral-border);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.app-btn-secondary:hover {
+  background: var(--neutral-border);
+}
+
+/* App Icon Button */
+.app-btn-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  border: 1px solid var(--neutral-border);
+  background: var(--white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.app-btn-icon:hover {
+  background: var(--neutral-bg);
+  border-color: var(--neutral-dark);
 }
 ```
 
 ### 6. Form Elements
+
+#### Landing Site Forms
 ```css
-.input {
-  width: 100%;
-  padding: 16px 20px;
-  border: 1px solid var(--neutral-border);
-  border-radius: 8px;
-  font-family: 'Inter', sans-serif;
-  font-size: 16px;
-  transition: border-color 0.2s ease;
+/* Landing Contact Form */
+.landing-form-group {
+  margin-bottom: var(--space-lg);
 }
 
-.input:focus {
-  outline: none;
-  border-color: var(--primary-brown);
-}
-
-.input-error {
-  border-color: var(--error);
-}
-
-.label {
-  font-family: 'Inter', sans-serif;
+.landing-label {
+  font-family: 'Poppins', sans-serif;
   font-size: 16px;
   font-weight: 500;
   color: var(--neutral-black);
@@ -361,33 +639,127 @@ Using an 8px base unit:
   display: block;
 }
 
-.error-message {
+.landing-input {
+  width: 100%;
+  padding: 16px 20px;
+  border: 2px solid var(--neutral-border);
+  border-radius: 12px;
   font-family: 'Inter', sans-serif;
-  font-size: 14px;
-  color: var(--error);
-  margin-top: var(--space-xs);
+  font-size: 16px;
+  transition: all 0.3s ease;
+  background: var(--white);
+}
+
+.landing-input:focus {
+  outline: none;
+  border-color: var(--primary-main);
+  box-shadow: 0 0 0 4px rgba(147, 60, 36, 0.1);
+}
+
+.landing-textarea {
+  min-height: 120px;
+  resize: vertical;
 }
 ```
 
-## Layout Grid
+#### Web Application Forms
+```css
+/* App Form Elements */
+.app-form-group {
+  margin-bottom: var(--space-md);
+}
 
-### Desktop (1280px)
-- Container: 1120px (80px padding each side)
-- Columns: 12
-- Gutter: 20px
-- Product Grid: 3 columns
+.app-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--neutral-black);
+  margin-bottom: var(--space-xs);
+  display: block;
+}
 
-### Tablet (768px - 1279px)
-- Container: 100% - 40px
-- Columns: 8
-- Gutter: 16px
-- Product Grid: 2 columns
+.app-label-required::after {
+  content: '*';
+  color: var(--error);
+  margin-left: 4px;
+}
 
-### Mobile (< 768px)
-- Container: 100% - 20px
-- Columns: 4
-- Gutter: 12px
-- Product Grid: 1 column
+.app-input {
+  width: 100%;
+  padding: 8px 12px;
+  border: 1px solid var(--neutral-border);
+  border-radius: 6px;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.app-input:focus {
+  outline: none;
+  border-color: var(--primary-main);
+  box-shadow: 0 0 0 3px rgba(147, 60, 36, 0.1);
+}
+
+.app-input-error {
+  border-color: var(--error);
+}
+
+.app-error-message {
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
+  color: var(--error);
+  margin-top: var(--space-xs);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+```
+
+## Layout Systems
+
+### Landing Site Layout
+
+#### Desktop (1280px+)
+- Container: 1200px max-width
+- Padding: 80px (sides)
+- Hero: Full viewport height
+- Features Grid: 3 columns
+- Testimonials: 2 columns
+
+#### Tablet (768px - 1279px)
+- Container: 100% - 48px
+- Padding: 24px (sides)
+- Hero: Min 600px height
+- Features Grid: 2 columns
+- Testimonials: 1 column
+
+#### Mobile (< 768px)
+- Container: 100% - 32px
+- Padding: 16px (sides)
+- Hero: Min 500px height
+- All grids: 1 column
+- Stacked layout
+
+### Web Application Layout
+
+#### Desktop (1280px+)
+- Sidebar: 240px (collapsible)
+- Main Content: Flexible
+- Container: 1120px max-width
+- Item Grid: 4 columns
+- Data Tables: Full width
+
+#### Tablet (768px - 1279px)
+- Sidebar: Hidden (hamburger menu)
+- Main Content: Full width - 40px
+- Item Grid: 3 columns
+- Data Tables: Horizontal scroll
+
+#### Mobile (< 768px)
+- Sidebar: Full screen overlay
+- Main Content: Full width - 20px
+- Item Grid: 2 columns
+- Data Tables: Card view
 
 ## Responsive Breakpoints
 
@@ -416,34 +788,163 @@ Using an 8px base unit:
 
 ## Animation Guidelines
 
-### Transitions
+### Landing Site Animations
+
+#### Scroll Animations
 ```css
-/* Default transition */
-transition: all 0.2s ease;
-
-/* Hover animations */
-transition: transform 0.2s ease, box-shadow 0.2s ease;
-
-/* Color transitions */
-transition: color 0.2s ease, background-color 0.2s ease;
-```
-
-### Hover Effects
-- Buttons: Slight translate up (-2px) or darken background
-- Cards: Lift effect with shadow
-- Links: Color change to primary-gold
-- Images: Subtle zoom (scale: 1.05)
-
-### Loading States
-```css
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+/* Fade in on scroll */
+.landing-animate-fade-in {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: all 0.6s ease-out;
 }
 
-.skeleton {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  background: var(--neutral-border);
+.landing-animate-fade-in.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Stagger children */
+.landing-animate-stagger > * {
+  transition-delay: calc(var(--index) * 0.1s);
+}
+```
+
+#### Hero Animations
+```css
+@keyframes heroSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.landing-hero-title {
+  animation: heroSlideIn 0.8s ease-out;
+}
+
+.landing-hero-subtitle {
+  animation: heroSlideIn 0.8s ease-out 0.2s both;
+}
+
+.landing-hero-cta {
+  animation: heroSlideIn 0.8s ease-out 0.4s both;
+}
+```
+
+### Web Application Animations
+
+#### Micro-interactions
+```css
+/* Quick transitions for responsiveness */
+.app-transition-all {
+  transition: all 0.15s ease;
+}
+
+/* Loading states */
+.app-spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Skeleton loading */
+.app-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--neutral-border) 25%,
+    var(--neutral-bg) 50%,
+    var(--neutral-border) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+```
+
+### Shared Hover Effects
+- Landing buttons: Scale + shadow enhancement
+- App buttons: Subtle background change
+- Cards: Lift effect appropriate to context
+- Links: Color transitions
+- Images: Zoom on hover (landing only)
+
+## shadcn/ui Component Usage
+
+### Core Components Used
+
+#### Navigation
+- **NavigationMenu** - Main navigation (customized for landing vs app)
+- **Sheet** - Mobile navigation drawer
+- **Tabs** - Category navigation in web app
+
+#### Forms
+- **Form** - React Hook Form integration
+- **Input** - Text inputs with validation states
+- **Select** - Dropdown selections
+- **Textarea** - Multi-line text input
+- **Checkbox** - Boolean selections
+- **RadioGroup** - Single choice selections
+
+#### Feedback
+- **Alert** - Information messages
+- **Toast** - Temporary notifications
+- **AlertDialog** - Confirmation dialogs
+- **Dialog** - Modal windows
+
+#### Data Display
+- **Table** - Data tables in admin
+- **Card** - Content containers
+- **Badge** - Status indicators
+- **Avatar** - User profile images
+
+#### Layout
+- **Separator** - Visual dividers
+- **ScrollArea** - Custom scrollbars
+- **AspectRatio** - Responsive media containers
+
+### Customization Approach
+
+```typescript
+// Example: Customizing shadcn/ui theme
+// apps/web/src/styles/globals.css
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 6.7%;
+    
+    --primary: 15 59% 36%; /* #933C24 */
+    --primary-foreground: 0 0% 98%;
+    
+    --secondary: 34 47% 72%; /* #E9BD8C */
+    --secondary-foreground: 0 0% 9%;
+    
+    --muted: 30 20% 97%; /* #F9F6F1 */
+    --muted-foreground: 0 0% 45.1%;
+    
+    --accent: 34 47% 72%;
+    --accent-foreground: 0 0% 9%;
+    
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 0 0% 85.1%; /* #D9D9D9 */
+    --input: 0 0% 85.1%;
+    --ring: 15 59% 36%;
+    
+    --radius: 0.5rem;
+  }
 }
 ```
 
@@ -490,48 +991,196 @@ Use Heroicons or similar for consistency:
 
 ## Component States
 
-### Interactive States
-1. **Default**: Normal appearance
-2. **Hover**: Visual feedback on mouse over
-3. **Active**: During click/tap
-4. **Focus**: Keyboard navigation
-5. **Disabled**: Reduced opacity (0.5)
-6. **Loading**: Skeleton or spinner
+### Landing Site States
+Focused on conversion and engagement:
 
-### Form States
-1. **Empty**: Default state
-2. **Filled**: User has entered data
-3. **Focus**: Currently active
-4. **Error**: Validation failed
-5. **Success**: Validation passed
-6. **Disabled**: Cannot be edited
+#### CTA Button States
+1. **Default**: High contrast, shadow
+2. **Hover**: Enhanced shadow, slight scale
+3. **Active**: Pressed appearance
+4. **Loading**: Pulse animation
 
-## Mobile Considerations
+#### Form Field States
+1. **Empty**: Inviting appearance
+2. **Focus**: Strong visual indicator
+3. **Filled**: Subtle success state
+4. **Error**: Clear but not alarming
+5. **Success**: Green check indicator
 
-### Touch Targets
-- Minimum size: 44x44px
-- Spacing between targets: 8px minimum
+### Web Application States
+Focused on efficiency and clarity:
 
-### Gestures
-- Swipe for image galleries
-- Pull to refresh (if applicable)
-- Pinch to zoom on product images
+#### Interactive Element States
+1. **Default**: Clean, minimal
+2. **Hover**: Subtle highlight
+3. **Active**: Clear selection
+4. **Focus**: Accessibility outline
+5. **Disabled**: 50% opacity
+6. **Loading**: Inline spinner
 
-### Performance
-- Lazy load images
-- Optimize image sizes
-- Use WebP format with fallbacks
-- Minimize JavaScript bundle
+#### Data States
+1. **Empty**: Helpful empty state
+2. **Loading**: Skeleton screens
+3. **Error**: Inline error messages
+4. **Success**: Toast notifications
+5. **Partial**: Progress indicators
 
-## Dark Mode (Future Enhancement)
+## Platform-Specific Considerations
 
+### Landing Site Mobile
+
+#### Performance First
+- Critical CSS inline
+- Lazy load below-fold content
+- Preload hero images
+- Minimal JavaScript (< 50KB)
+- Service worker for offline
+
+#### Touch Optimizations
+- Large CTA buttons (min 48px)
+- Swipeable testimonials
+- Smooth scrolling
+- Tap to expand FAQ items
+
+### Web Application Mobile
+
+#### Functionality Focus
+- Bottom navigation bar
+- Swipe gestures for actions
+- Pull to refresh lists
+- Optimistic UI updates
+- Offline capability
+
+#### Responsive Tables
 ```css
-@media (prefers-color-scheme: dark) {
-  :root {
-    --neutral-black: #F5F5F5;
-    --neutral-dark: #B9B9B9;
-    --neutral-bg: #1A1A1A;
-    /* Additional dark mode colors */
+/* Mobile table transformation */
+@media (max-width: 768px) {
+  .app-table-responsive {
+    display: block;
+  }
+  
+  .app-table-responsive thead {
+    display: none;
+  }
+  
+  .app-table-responsive tr {
+    display: block;
+    margin-bottom: var(--space-md);
+    border: 1px solid var(--neutral-border);
+    border-radius: 8px;
+    padding: var(--space-md);
+  }
+  
+  .app-table-responsive td {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--space-xs) 0;
+  }
+  
+  .app-table-responsive td::before {
+    content: attr(data-label);
+    font-weight: 600;
+    color: var(--neutral-dark);
   }
 }
+```
+
+## Theme Support
+
+### Landing Site Theme
+The landing site uses a fixed light theme optimized for marketing:
+
+```css
+/* Landing always light mode for consistency */
+.landing-root {
+  color-scheme: light only;
+}
+```
+
+### Web Application Theme Support
+
+#### Light Mode (Default)
+```css
+.app-theme-light {
+  --app-bg-primary: #FFFFFF;
+  --app-bg-secondary: #F5F5F5;
+  --app-text-primary: #111111;
+  --app-text-secondary: #5D5D5D;
+  --app-border: #D9D9D9;
+}
+```
+
+#### Dark Mode
+```css
+.app-theme-dark {
+  --app-bg-primary: #1A1A1A;
+  --app-bg-secondary: #252525;
+  --app-text-primary: #F5F5F5;
+  --app-text-secondary: #B9B9B9;
+  --app-border: #404040;
+}
+
+/* Automatic dark mode */
+@media (prefers-color-scheme: dark) {
+  .app-theme-auto {
+    --app-bg-primary: #1A1A1A;
+    /* ... rest of dark theme */
+  }
+}
+```
+
+#### Theme Toggle
+```typescript
+// Store theme preference
+const theme = localStorage.getItem('app-theme') || 'auto';
+document.documentElement.classList.add(`app-theme-${theme}`);
+```
+
+## Design Token Export
+
+For maintaining consistency across applications:
+
+```typescript
+// packages/ui/src/tokens.ts
+export const tokens = {
+  colors: {
+    primary: {
+      main: '#933C24',
+      accent: '#E9BD8C',
+      light: '#F9F6F1',
+    },
+    neutral: {
+      black: '#111111',
+      dark: '#5D5D5D',
+      gray: '#737373',
+      light: '#B9B9B9',
+      border: '#D9D9D9',
+      bg: '#F5F5F5',
+      white: '#FFFFFF',
+    },
+    semantic: {
+      success: '#10B981',
+      warning: '#F59E0B',
+      error: '#EF4444',
+      info: '#3B82F6',
+    },
+  },
+  spacing: {
+    xs: '4px',
+    sm: '8px',
+    md: '16px',
+    lg: '24px',
+    xl: '32px',
+    '2xl': '48px',
+    '3xl': '64px',
+    '4xl': '80px',
+  },
+  typography: {
+    fontFamily: {
+      heading: "'Sansita Swashed', cursive",
+      body: "'Inter', sans-serif",
+      accent: "'Poppins', sans-serif",
+    },
+  },
+};
 ```

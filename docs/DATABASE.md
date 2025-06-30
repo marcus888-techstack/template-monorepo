@@ -1,14 +1,15 @@
 # Database Schema Documentation
 
 ## Overview
-The Bakery Website uses PostgreSQL as the primary database with Prisma ORM for type-safe database access. This document outlines the complete database schema, relationships, and design decisions.
+The project uses PostgreSQL as the primary database with Prisma ORM for type-safe database access. The database serves both the landing site and web application through a unified backend API. This document outlines the complete database schema, relationships, and design decisions.
 
 ## Entity Relationship Diagram
 
 ```mermaid
 erDiagram
-    User ||--o{ Order : places
-    User ||--o| Cart : has
+    User ||--o{ Activity : creates
+    User ||--o| Collection : has
+    User ||--o{ ContactSubmission : submits
     User {
         string id PK
         string clerkId UK
@@ -19,7 +20,7 @@ erDiagram
         datetime updatedAt
     }
     
-    Category ||--o{ Product : contains
+    Category ||--o{ Item : contains
     Category {
         string id PK
         string name UK
@@ -28,65 +29,82 @@ erDiagram
         int displayOrder
     }
     
-    Product ||--o{ OrderItem : "ordered in"
-    Product ||--o{ CartItem : "added to"
-    Product {
+    Item ||--o{ ActivityItem : "used in"
+    Item ||--o{ CollectionItem : "added to"
+    Item {
         string id PK
         string name
         string description
-        decimal price
+        string metadata
         string image
         string categoryId FK
         boolean featured
-        boolean inStock
-        int stockQuantity
+        boolean available
+        int quantity
         datetime createdAt
         datetime updatedAt
     }
     
-    Cart ||--o{ CartItem : contains
-    Cart {
+    Collection ||--o{ CollectionItem : contains
+    Collection {
         string id PK
         string userId FK
         datetime createdAt
         datetime updatedAt
     }
     
-    CartItem {
+    CollectionItem {
         string id PK
-        string cartId FK
-        string productId FK
+        string collectionId FK
+        string itemId FK
         int quantity
         datetime addedAt
     }
     
-    Order ||--o{ OrderItem : contains
-    Order {
+    Activity ||--o{ ActivityItem : contains
+    Activity {
         string id PK
         string userId FK
-        string orderNumber UK
-        decimal subtotal
-        decimal tax
-        decimal total
+        string activityNumber UK
+        string data
         string status
-        string customerName
-        string customerEmail
-        string customerPhone
-        string deliveryMethod
-        string deliveryAddress
-        datetime deliveryDate
+        string userInfo
+        string contactInfo
+        string method
+        string location
+        datetime scheduledDate
         string notes
         datetime createdAt
         datetime updatedAt
     }
     
-    OrderItem {
+    ActivityItem {
         string id PK
-        string orderId FK
-        string productId FK
+        string activityId FK
+        string itemId FK
         int quantity
-        decimal unitPrice
-        decimal totalPrice
+        string itemData
+        string totalData
+    }
+    
+    ContactSubmission ||--|| User : "optional"
+    ContactSubmission {
+        string id PK
+        string name
+        string email
+        string subject
+        string message
+        string source
+        string userId FK "optional"
+        datetime createdAt
+    }
+    
+    NewsletterSubscription {
+        string id PK
+        string email UK
+        boolean active
+        datetime subscribedAt
+        datetime unsubscribedAt "optional"
     }
 ```
 
@@ -121,174 +139,239 @@ model User {
   @@index([email])
 }
 
-// Product category
+// Content category
 model Category {
-  id           String    @id @default(cuid())
-  name         String    @unique
-  slug         String    @unique
+  id           String @id @default(cuid())
+  name         String @unique
+  slug         String @unique
   description  String?
-  displayOrder Int       @default(0)
-  products     Product[]
+  displayOrder Int    @default(0)
+  items        Item[] // Customize: rename based on your domain
 
   @@index([slug])
 }
 
-// Product model
-model Product {
-  id            String      @id @default(cuid())
-  name          String
-  description   String?
-  price         Decimal     @db.Decimal(10, 2)
-  image         String
-  category      Category    @relation(fields: [categoryId], references: [id])
-  categoryId    String
-  featured      Boolean     @default(false)
-  inStock       Boolean     @default(true)
-  stockQuantity Int         @default(0)
-  orderItems    OrderItem[]
-  cartItems     CartItem[]
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+// Content item model
+model Item {
+  id             String           @id @default(cuid())
+  name           String
+  description    String?
+  metadata       String? // Customize: use for price, tags, or other domain-specific data
+  image          String
+  category       Category         @relation(fields: [categoryId], references: [id])
+  categoryId     String
+  featured       Boolean          @default(false)
+  available      Boolean          @default(true) // Customize: rename to inStock, published, etc.
+  quantity       Int              @default(0) // Customize: use for stock, views, likes, etc.
+  activityItems  ActivityItem[]
+  collectionItems CollectionItem[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
   @@index([categoryId])
   @@index([featured])
   @@index([name])
 }
 
-// Shopping cart
-model Cart {
-  id        String     @id @default(cuid())
-  user      User       @relation(fields: [userId], references: [id])
-  userId    String     @unique
-  items     CartItem[]
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+// User collection
+model Collection {
+  id        String           @id @default(cuid())
+  user      User             @relation(fields: [userId], references: [id])
+  userId    String           @unique
+  items     CollectionItem[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
 
   @@index([userId])
 }
 
-// Cart items
-model CartItem {
-  id        String   @id @default(cuid())
-  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
-  cartId    String
-  product   Product  @relation(fields: [productId], references: [id])
-  productId String
-  quantity  Int
-  addedAt   DateTime @default(now())
+// Collection items
+model CollectionItem {
+  id           String     @id @default(cuid())
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  collectionId String
+  item         Item       @relation(fields: [itemId], references: [id])
+  itemId       String
+  quantity     Int // Customize: use for quantity, priority, rating, etc.
+  addedAt      DateTime   @default(now())
 
-  @@unique([cartId, productId])
-  @@index([cartId])
-  @@index([productId])
+  @@unique([collectionId, itemId])
+  @@index([collectionId])
+  @@index([itemId])
 }
 
-// Order model
-model Order {
-  id              String      @id @default(cuid())
-  orderNumber     String      @unique @default(cuid())
-  user            User        @relation(fields: [userId], references: [id])
-  userId          String
-  items           OrderItem[]
-  subtotal        Decimal     @db.Decimal(10, 2)
-  tax             Decimal     @db.Decimal(10, 2)
-  total           Decimal     @db.Decimal(10, 2)
-  status          OrderStatus @default(PENDING)
-  // Customer information (denormalized for order history)
-  customerName    String
-  customerEmail   String
-  customerPhone   String?
-  // Delivery information
-  deliveryMethod  DeliveryMethod @default(PICKUP)
-  deliveryAddress String?
-  deliveryDate    DateTime?
-  notes           String?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+// Activity model
+model Activity {
+  id             String         @id @default(cuid())
+  activityNumber String         @unique @default(cuid())
+  user           User           @relation(fields: [userId], references: [id])
+  userId         String
+  items          ActivityItem[]
+  data           String? // Customize: use for totals, scores, results, etc.
+  status         ActivityStatus @default(PENDING)
+  // User information (denormalized for history)
+  userInfo       String // Customize: customerName, participantName, etc.
+  contactInfo    String // Customize: email, phone, etc.
+  // Additional information
+  method         ProcessMethod  @default(ONLINE) // Customize: deliveryMethod, accessMethod, etc.
+  location       String? // Customize: address, venue, etc.
+  scheduledDate  DateTime?
+  notes          String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 
   @@index([userId])
-  @@index([orderNumber])
+  @@index([activityNumber])
   @@index([status])
   @@index([createdAt])
 }
 
-// Order items
-model OrderItem {
-  id         String  @id @default(cuid())
-  order      Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
-  orderId    String
-  product    Product @relation(fields: [productId], references: [id])
-  productId  String
+// Activity items
+model ActivityItem {
+  id         String   @id @default(cuid())
+  activity   Activity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  activityId String
+  item       Item     @relation(fields: [itemId], references: [id])
+  itemId     String
   quantity   Int
-  unitPrice  Decimal @db.Decimal(10, 2)
-  totalPrice Decimal @db.Decimal(10, 2)
+  itemData   String? // Customize: unitPrice, score, rating, etc.
+  totalData  String? // Customize: totalPrice, totalScore, etc.
 
-  @@index([orderId])
-  @@index([productId])
+  @@index([activityId])
+  @@index([itemId])
 }
 
 // Enums
 enum Role {
-  CUSTOMER
+  USER     // Customize: CUSTOMER, MEMBER, STUDENT, etc.
   ADMIN
 }
 
-enum OrderStatus {
+enum ActivityStatus {
   PENDING
   PROCESSING
-  READY
+  READY     // Customize: APPROVED, PUBLISHED, etc.
   COMPLETED
   CANCELLED
 }
 
-enum DeliveryMethod {
-  PICKUP
-  DELIVERY
+enum ProcessMethod {
+  ONLINE    // Customize: PICKUP, DIGITAL, etc.
+  OFFLINE   // Customize: DELIVERY, PHYSICAL, etc.
+}
+
+// Landing site specific models
+model ContactSubmission {
+  id        String   @id @default(cuid())
+  name      String
+  email     String
+  subject   String?
+  message   String
+  source    String   @default("landing") // landing, web, admin
+  // Optional: link to user if they're logged in
+  user      User?    @relation(fields: [userId], references: [id])
+  userId    String?
+  createdAt DateTime @default(now())
+  
+  @@index([email])
+  @@index([createdAt])
+}
+
+model NewsletterSubscription {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  active         Boolean   @default(true)
+  subscribedAt   DateTime  @default(now())
+  unsubscribedAt DateTime?
+  
+  @@index([email])
+  @@index([active])
 }
 ```
 
 ## Table Descriptions
 
-### Users Table
+### Core Tables (Shared)
+
+#### Users Table
 - **Purpose**: Stores user account information synchronized with Clerk
 - **Key Fields**:
   - `clerkId`: Unique identifier from Clerk authentication
-  - `role`: Determines access level (CUSTOMER or ADMIN)
-- **Relationships**: One-to-many with Orders, One-to-one with Cart
+  - `role`: Determines access level (USER or ADMIN)
+- **Relationships**: One-to-many with Activities, One-to-one with Collection, Optional one-to-many with ContactSubmissions
+- **Customization**: Rename USER role based on your domain (CUSTOMER, MEMBER, etc.)
+- **Used By**: Web application (authentication required)
 
-### Categories Table
-- **Purpose**: Product categorization
+#### Categories Table
+- **Purpose**: Content categorization
 - **Key Fields**:
   - `slug`: URL-friendly identifier
   - `displayOrder`: Controls category display sequence
-- **Initial Categories**: Cake, Muffins, Croissant, Bread, Tart, Favorite
+- **Customization**: Define categories based on your domain ([Type A], [Type B], etc.)
+- **Used By**: Both landing site (public display) and web application
 
-### Products Table
-- **Purpose**: Core product information
+#### Items Table
+- **Purpose**: Core content information
 - **Key Fields**:
-  - `price`: Stored as decimal with 2 decimal places
-  - `featured`: Boolean flag for homepage display
-  - `stockQuantity`: Inventory tracking
+  - `metadata`: Flexible field for domain-specific data (price, tags, etc.)
+  - `featured`: Boolean flag for homepage display on both sites
+  - `quantity`: Multi-purpose field (stock, views, likes, etc.)
 - **Relationships**: Many-to-one with Category
+- **Customization**: Rename to Products, Posts, Assets, etc. based on your domain
+- **Used By**: Both landing site (featured items) and web application (full catalog)
 
-### Cart & CartItems Tables
-- **Purpose**: Persistent shopping cart functionality
-- **Design Decision**: Separate cart items for flexibility
-- **Unique Constraint**: One product per cart to prevent duplicates
+### Web Application Tables
 
-### Orders & OrderItems Tables
-- **Purpose**: Order management and history
+#### Collection & CollectionItems Tables
+- **Purpose**: Persistent user selections functionality
+- **Design Decision**: Separate collection items for flexibility
+- **Unique Constraint**: One item per collection to prevent duplicates
+- **Customization**: Use for cart, favorites, playlists, etc.
+- **Used By**: Web application only (requires authentication)
+
+#### Activities & ActivityItems Tables
+- **Purpose**: Activity management and history
 - **Design Decisions**:
-  - Denormalized customer info for historical accuracy
-  - Separate order items for detailed tracking
-  - Order number generation for easy reference
+  - Denormalized user info for historical accuracy
+  - Separate activity items for detailed tracking
+  - Activity number generation for easy reference
+- **Customization**: Use for orders, bookings, submissions, etc.
+- **Used By**: Web application only (requires authentication)
+
+### Landing Site Tables
+
+#### ContactSubmission Table
+- **Purpose**: Store contact form submissions from landing site
+- **Key Fields**:
+  - `source`: Identifies where the submission came from (landing/web/admin)
+  - `userId`: Optional link to authenticated user
+- **Privacy**: Consider GDPR compliance for storing email/personal data
+- **Used By**: Primarily landing site, but can be used by web app
+
+#### NewsletterSubscription Table
+- **Purpose**: Manage email newsletter subscriptions
+- **Key Fields**:
+  - `active`: Boolean for subscription status
+  - `unsubscribedAt`: Timestamp for opt-out tracking
+- **Compliance**: Must support unsubscribe functionality
+- **Used By**: Landing site footer, web app settings
 
 ## Indexes
 
 ### Performance Indexes
+
+#### Authentication & User Queries
 - User: `clerkId`, `email` - Fast authentication lookups
-- Product: `categoryId`, `featured`, `name` - Efficient filtering and search
-- Order: `userId`, `orderNumber`, `status`, `createdAt` - Quick order queries
-- Cart/OrderItem: Foreign keys for join operations
+- ContactSubmission: `email`, `createdAt` - Admin dashboard queries
+- NewsletterSubscription: `email`, `active` - Newsletter management
+
+#### Content Queries
+- Item: `categoryId`, `featured`, `name` - Efficient filtering and search
+- Category: `slug` - URL-based lookups
+
+#### Application Queries
+- Activity: `userId`, `activityNumber`, `status`, `createdAt` - Quick activity queries
+- Collection/ActivityItem: Foreign keys for join operations
 
 ## Database Migrations
 
@@ -301,30 +384,30 @@ npx prisma migrate dev --name init
 ```typescript
 // prisma/seed.ts
 const categories = [
-  { name: 'Cake', slug: 'cake', displayOrder: 1 },
-  { name: 'Muffins', slug: 'muffins', displayOrder: 2 },
-  { name: 'Croissant', slug: 'croissant', displayOrder: 3 },
-  { name: 'Bread', slug: 'bread', displayOrder: 4 },
-  { name: 'Tart', slug: 'tart', displayOrder: 5 }
+  { name: '[Type A]', slug: 'type-a', displayOrder: 1 },
+  { name: '[Type B]', slug: 'type-b', displayOrder: 2 },
+  { name: '[Type C]', slug: 'type-c', displayOrder: 3 },
+  { name: '[Type D]', slug: 'type-d', displayOrder: 4 },
+  { name: '[Type E]', slug: 'type-e', displayOrder: 5 }
 ];
 
-const products = [
+const items = [
   {
-    name: 'Chocolate Cake',
-    description: 'Rich chocolate cake with ganache',
-    price: 35.00,
-    categorySlug: 'cake',
+    name: '[Item Name]',
+    description: '[Item description]',
+    metadata: '[domain-specific data]', // price, tags, etc.
+    categorySlug: 'type-a',
     featured: true,
-    stockQuantity: 20
+    quantity: 20 // stock, views, etc.
   },
-  // ... more products
+  // ... more items
 ];
 ```
 
 ## Data Types and Constraints
 
-### Decimal Fields
-- `price`, `subtotal`, `tax`, `total`: DECIMAL(10,2) for accurate monetary calculations
+### Flexible Fields
+- `metadata`, `data`, `itemData`, `totalData`: String fields for domain-specific data (prices, scores, etc.)
 
 ### String Length Limits
 - Most string fields: VARCHAR(255) default
@@ -333,15 +416,15 @@ const products = [
 ### Unique Constraints
 - User: `clerkId`, `email`
 - Category: `name`, `slug`
-- Order: `orderNumber`
-- CartItem: Composite key `[cartId, productId]`
+- Activity: `activityNumber`
+- CollectionItem: Composite key `[collectionId, itemId]`
 
 ## Database Maintenance
 
 ### Regular Tasks
 1. **Backup Schedule**: Daily automated backups
 2. **Index Optimization**: Monthly ANALYZE operations
-3. **Data Archival**: Move completed orders > 2 years to archive
+3. **Data Archival**: Move completed activities > 2 years to archive
 
 ### Performance Monitoring
 - Query performance tracking
@@ -354,17 +437,48 @@ const products = [
 - Regular security updates
 - Audit logging for sensitive operations
 
+## Data Access Patterns
+
+### Landing Site Queries
+```sql
+-- Featured items for homepage
+SELECT * FROM "Item" 
+WHERE featured = true AND available = true
+ORDER BY "updatedAt" DESC
+LIMIT 6;
+
+-- Categories for navigation
+SELECT name, slug, 
+  (SELECT COUNT(*) FROM "Item" WHERE "categoryId" = c.id) as item_count
+FROM "Category" c
+ORDER BY "displayOrder";
+```
+
+### Web Application Queries
+```sql
+-- User's collection with items
+SELECT c.*, ci.*, i.*
+FROM "Collection" c
+JOIN "CollectionItem" ci ON ci."collectionId" = c.id
+JOIN "Item" i ON i.id = ci."itemId"
+WHERE c."userId" = ?
+ORDER BY ci."addedAt" DESC;
+```
+
 ## Future Considerations
 
 ### Potential Enhancements
-1. **Product Variants**: Size/flavor options
-2. **Inventory Tracking**: Real-time stock updates
-3. **Customer Reviews**: Rating and review system
-4. **Loyalty Program**: Points and rewards tracking
-5. **Analytics Tables**: Order trends, popular products
+1. **Landing Site Analytics**: Page views, conversion tracking
+2. **A/B Testing Tables**: Store variant performance
+3. **Item Variants**: Different options/configurations
+4. **Real-time Tracking**: Live status updates
+5. **User Reviews**: Rating and feedback system
+6. **Blog/Content Tables**: For landing site content marketing
+7. **FAQ Management**: Dynamic FAQ content
 
 ### Scalability Planning
-- Partitioning for orders table by date
-- Read replicas for reporting
-- Caching layer (Redis) for frequent queries
-- Database sharding if needed
+- Partitioning for activities and contact_submissions by date
+- Read replicas for landing site queries
+- Materialized views for featured content
+- Caching layer (Redis) for public data
+- Consider separate analytics database

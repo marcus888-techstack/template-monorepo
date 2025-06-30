@@ -1,34 +1,87 @@
-# Technical Specification - Delicious Bakery Website
+# Technical Specification - [Project Name]
 
 ## Table of Contents
 1. [Project Overview](#project-overview)
-2. [Functional Requirements](#functional-requirements)
-3. [Non-Functional Requirements](#non-functional-requirements)
-4. [User Stories](#user-stories)
-5. [Technical Architecture](#technical-architecture)
-6. [API Specification](#api-specification)
-7. [Security Requirements](#security-requirements)
-8. [Performance Requirements](#performance-requirements)
+2. [Architecture Decision](#architecture-decision)
+3. [Functional Requirements](#functional-requirements)
+4. [Non-Functional Requirements](#non-functional-requirements)
+5. [User Stories](#user-stories)
+6. [Technical Architecture](#technical-architecture)
+7. [API Specification](#api-specification)
+8. [Security Requirements](#security-requirements)
+9. [Performance Requirements](#performance-requirements)
 
 ## Project Overview
 
 ### Description
-A modern e-commerce web application for a bakery business that allows customers to browse products, add items to cart, and place orders. The system includes an admin panel for managing products, orders, and users.
+A modern two-part web platform consisting of a marketing landing site and a full-featured web application. The landing site focuses on visitor conversion, while the web application provides authenticated users with content browsing, collection management, and data processing capabilities. The system includes an integrated admin panel within the web application for content and user management.
 
 ### Goals
-- Provide an intuitive shopping experience for bakery customers
-- Enable efficient product and order management for administrators
-- Ensure secure authentication and data protection
-- Deliver fast, responsive performance across all devices
+- **Landing Site**: Maximize visitor conversion with optimized performance
+- **Web Application**: Provide intuitive experience for authenticated users
+- **Admin Integration**: Enable efficient content management within the main app
+- **Shared Infrastructure**: Leverage unified backend and shared components
+- **Security**: Ensure secure authentication and data protection
+- **Performance**: Deliver fast, responsive experience across all devices
 
 ### Technology Stack
-- **Frontend**: React 18 with TypeScript, Vite, Tailwind CSS
-- **Backend**: FastAPI with Python, Prisma ORM
+
+#### Landing Site
+- **Framework**: React 18 with Vite
+- **UI Components**: shadcn/ui
+- **Styling**: Tailwind CSS
+- **Animations**: Framer Motion
+- **Deployment**: Vercel/Netlify (static hosting)
+
+#### Web Application
+- **Framework**: React 18 with TypeScript, Vite
+- **UI Components**: shadcn/ui
+- **Routing**: React Router v6
+- **State Management**: Zustand
+- **Data Fetching**: TanStack Query
+- **Authentication**: Clerk
+- **Forms**: React Hook Form + Zod (integrated with shadcn/ui form components)
+- **Styling**: Tailwind CSS
+
+#### Backend (Shared)
+- **Framework**: FastAPI with Python
+- **ORM**: Prisma
 - **Database**: PostgreSQL
 - **Cache**: Redis
-- **Authentication**: Clerk (frontend only), JWT verification (backend)
-- **Deployment**: Docker, Docker Compose (runtime only)
-- **Reverse Proxy**: Nginx
+- **Authentication**: JWT verification (from Clerk)
+
+#### Infrastructure
+- **Monorepo**: pnpm workspaces
+- **Shared Packages**: @project/ui (shadcn/ui based), @project/utils, @project/types
+- **Containerization**: Docker
+- **Orchestration**: Docker Compose
+- **Reverse Proxy**: Nginx (subdomain routing)
+
+## Architecture Decision
+
+### Two-Part Architecture
+The project is structured as two separate applications:
+
+1. **Landing Site** (`yourdomain.com`)
+   - Public-facing marketing site
+   - Optimized for SEO and conversion
+   - Minimal JavaScript for fast loading
+   - Static site generation capabilities
+   - No authentication required
+
+2. **Web Application** (`app.yourdomain.com`)
+   - Full-featured SPA for authenticated users
+   - Integrated admin dashboard at `/admin`
+   - Protected routes and role-based access
+   - Rich interactive features
+   - Real-time updates
+
+### Benefits of This Approach
+- **Performance**: Landing site loads faster without app bundle
+- **SEO**: Better search engine optimization for marketing content
+- **Security**: Application code not exposed to public visitors
+- **Deployment**: Independent deployment cycles
+- **Scalability**: Can scale landing and app separately
 
 ## Functional Requirements
 
@@ -42,86 +95,111 @@ A modern e-commerce web application for a bakery business that allows customers 
 - **Profile Management**: Users can update their profile information
 
 #### 1.2 User Roles
-- **Customer**: Can browse products, manage cart, place orders
-- **Admin**: Full access to product management, order management, and user administration
+- **User**: Can browse content, manage collections, perform actions
+- **Admin**: Full access to content management, data processing, and user administration
 
-### 2. Product Catalog
+### 2. Landing Site Features
 
-#### 2.1 Product Display
-- **Product Listing**: Grid view of products with pagination
-- **Product Details**: Detailed view with images, description, and pricing
-- **Category Filtering**: Filter products by categories (Cake, Muffins, Croissant, Bread, Tart)
-- **Search**: Search products by name or description
-- **Featured Products**: Highlight selected products on homepage
+#### 2.1 Homepage Sections
+- **Hero Section**: Eye-catching banner with CTA
+- **Features Showcase**: Key platform benefits
+- **Pricing/Plans**: Service tiers (if applicable)
+- **Testimonials**: Customer reviews
+- **FAQ Section**: Common questions
+- **Contact Form**: Lead capture
+- **Newsletter Signup**: Email list building
 
-#### 2.2 Product Information
-- Name, description, price
-- High-quality images
-- Category assignment
-- Stock availability status
-- Featured product flag
+#### 2.2 Performance Features
+- **Static Generation**: Pre-rendered pages
+- **Image Optimization**: WebP with fallbacks
+- **Lazy Loading**: Progressive image loading
+- **Minimal JavaScript**: Fast initial load
 
-### 3. Shopping Cart
+### 3. Content Management
 
-#### 3.1 Cart Operations
-- **Add to Cart**: Add products with quantity selection
-- **Update Quantity**: Modify item quantities in cart
-- **Remove Items**: Delete products from cart
-- **Cart Persistence**: Cart saved for authenticated users
-- **Guest Cart**: Allow shopping without authentication
+#### 3.1 Public Content Display (Both Sites)
+- **Featured Items**: Highlighted on landing and web app
+- **Category Navigation**: Browse by content type
+- **Public API**: Accessible without authentication
 
-#### 3.2 Cart Features
-- Real-time price calculation
-- Stock validation
-- Apply promotional discounts
-- Cart summary display
+#### 3.2 Authenticated Content (Web App Only)
+- **Full Catalog**: All items with pagination
+- **Advanced Search**: Filter by multiple criteria
+- **Detailed Views**: Complete item information
+- **User Interactions**: Add to collections
 
-### 4. Order Management
+### 4. User Collections (Web App Only)
 
-#### 4.1 Checkout Process
-- **Order Review**: Display order summary before confirmation
-- **Customer Information**: Collect delivery/pickup details
-- **Order Confirmation**: Generate order number and send confirmation
-- **Order History**: Users can view past orders
+#### 4.1 Collection Operations
+- **Add to Collection**: Add items with quantity/options selection
+- **Update Selection**: Modify item properties in collection
+- **Remove Items**: Delete items from collection
+- **Collection Persistence**: Collections saved for authenticated users
+- **Guest Collections**: Session-based for non-authenticated users
 
-#### 4.2 Order Status
+#### 4.2 Collection Features
+- Real-time updates
+- Validation checks
+- Apply modifiers/rules
+- Collection summary display
+- Quick actions from any page
+
+### 5. Data Processing (Web App Only)
+
+#### 5.1 Processing Workflow
+- **Data Review**: Display summary before confirmation
+- **User Information**: Collect necessary details
+- **Process Confirmation**: Generate reference number and send confirmation
+- **Activity History**: Users can view past activities
+
+#### 5.2 Process Status
 - Pending, Processing, Completed, Cancelled
 - Email notifications for status changes
-- Order tracking for customers
+- Activity tracking for users
+- Real-time status updates
 
-### 5. Admin Panel
+### 6. Admin Panel (Integrated in Web App)
 
-#### 5.1 Product Management
-- **CRUD Operations**: Create, read, update, delete products
-- **Image Upload**: Upload and manage product images
-- **Bulk Operations**: Update multiple products at once
-- **Inventory Management**: Track stock levels
+#### 6.1 Access Control
+- **Route Protection**: `/admin/*` routes require admin role
+- **Role Verification**: Checked at both frontend and backend
+- **Seamless Integration**: Same authentication as main app
 
-#### 5.2 Order Management
-- **Order Dashboard**: View all orders with filters
-- **Status Updates**: Change order status
-- **Order Details**: View complete order information
-- **Export Orders**: Download order reports
+#### 6.2 Content Management
+- **CRUD Operations**: Create, read, update, delete content items
+- **Media Upload**: Upload and manage images/files
+- **Bulk Operations**: Update multiple items at once
+- **Status Management**: Track item availability
+- **Featured Selection**: Mark items for homepage display
 
-#### 5.3 User Management
+#### 6.3 Data Management
+- **Data Dashboard**: View all activities with filters
+- **Status Updates**: Change process status
+- **Data Details**: View complete activity information
+- **Export Data**: Download activity reports
+
+#### 6.4 User Management
 - **User List**: View all registered users
 - **Role Management**: Assign admin privileges
-- **User Activity**: Track user orders and activity
+- **User Activity**: Track user activities and engagement
+- **Contact Submissions**: View landing site inquiries
 
-### 6. Content Management
+### 7. Cross-Application Features
 
-#### 6.1 Homepage
-- Hero section with call-to-action
-- Featured products section
-- Promotional banner (20% off first order)
-- About us section
-- Product categories display
+#### 7.1 Shared Components (via packages)
+- **UI Components**: Buttons, cards, modals
+- **Utilities**: Formatters, validators
+- **Type Definitions**: Consistent data models
 
-#### 6.2 Footer
-- Contact information
-- Social media links
-- Quick navigation links
-- Recent news/blog posts
+#### 7.2 Navigation Flow
+- **Landing → Web**: "Get Started" CTA
+- **Web → Landing**: Logo link to marketing site
+- **Deep Linking**: Preserve user intent
+
+#### 7.3 Data Consistency
+- **Shared Database**: Single source of truth
+- **Public API**: Consistent data access
+- **Cache Strategy**: Optimized for each use case
 
 ## Non-Functional Requirements
 
@@ -160,58 +238,97 @@ A modern e-commerce web application for a bakery business that allows customers 
 
 ## User Stories
 
-### Customer Stories
+### User Stories
 
-1. **As a customer, I want to browse bakery products by category so that I can find what I'm looking for quickly.**
+1. **As a user, I want to browse content by category so that I can find what I'm looking for quickly.**
    - Acceptance Criteria:
      - Categories are clearly visible
-     - Products load within 2 seconds
+     - Content loads within 2 seconds
      - Can switch between categories without page reload
 
-2. **As a customer, I want to add products to my cart so that I can purchase multiple items.**
+2. **As a user, I want to add items to my collection so that I can manage multiple selections.**
    - Acceptance Criteria:
-     - "Add to cart" button is prominent
-     - Cart updates without page reload
+     - "Add" button is prominent
+     - Collection updates without page reload
      - Visual feedback when item is added
 
-3. **As a customer, I want to view my order history so that I can reorder favorite items.**
+3. **As a user, I want to view my activity history so that I can review past actions.**
    - Acceptance Criteria:
-     - Order history shows all past orders
-     - Can view order details
-     - Can reorder with one click
+     - History shows all past activities
+     - Can view activity details
+     - Can repeat actions with one click
 
 ### Admin Stories
 
-1. **As an admin, I want to add new products so that I can update the catalog.**
+1. **As an admin, I want to add new content so that I can update the platform.**
    - Acceptance Criteria:
-     - Form with all product fields
-     - Image upload functionality
+     - Form with all content fields
+     - Media upload functionality
      - Preview before saving
 
-2. **As an admin, I want to manage orders so that I can fulfill customer requests.**
+2. **As an admin, I want to manage user activities so that I can process user requests.**
    - Acceptance Criteria:
-     - Dashboard shows pending orders
-     - Can update order status
-     - Can view customer details
+     - Dashboard shows pending activities
+     - Can update activity status
+     - Can view user details
+
+## Technical Implementation Details
+
+### Monorepo Structure
+```
+apps/
+├── landing/         # Marketing site
+├── web/            # Main application + admin
+└── backend/        # Shared API
+
+packages/
+├── ui/             # Shared components
+├── utils/          # Common utilities
+└── types/          # TypeScript types
+```
+
+### Admin Dashboard Implementation
+The admin dashboard remains integrated within the web application:
+- **Location**: `apps/web/src/pages/admin/*`
+- **Route Guards**: `AdminGuard` component
+- **Shared Auth**: Same Clerk instance as main app
+- **Benefits**: Code reuse, single deployment
 
 ## Technical Architecture
 
 ### Frontend Architecture
+
+#### Landing Site Structure
 ```
-frontend/
-├── src/
-│   ├── components/
-│   │   ├── common/         # Reusable UI components
-│   │   ├── layout/         # Layout components
-│   │   ├── products/       # Product-related components
-│   │   ├── cart/          # Cart components
-│   │   └── admin/         # Admin panel components
-│   ├── pages/             # Page components
-│   ├── hooks/             # Custom React hooks
-│   ├── services/          # API service layer
-│   ├── store/             # Zustand state management
-│   ├── utils/             # Utility functions
-│   └── types/             # TypeScript type definitions
+apps/landing/src/
+├── components/
+│   ├── Hero.tsx           # Hero section
+│   ├── Features.tsx       # Features showcase
+│   ├── Pricing.tsx        # Pricing tiers
+│   ├── Testimonials.tsx   # Customer reviews
+│   ├── FAQ.tsx            # Frequently asked questions
+│   └── ContactForm.tsx    # Contact form
+├── App.tsx                # Main app
+└── main.tsx               # Entry point
+```
+
+#### Web Application Structure
+```
+apps/web/src/
+├── components/
+│   ├── common/            # Shared UI components
+│   ├── layout/            # App layout components
+│   ├── content/           # Content components
+│   ├── collections/       # Collection components
+│   └── admin/            # Admin components
+├── pages/
+│   ├── dashboard/         # User pages
+│   └── admin/            # Admin pages
+├── guards/                # Route protection
+├── hooks/                 # Custom hooks
+├── services/              # API services
+├── store/                 # Zustand stores
+└── types/                 # TypeScript types
 ```
 
 ### Backend Architecture
@@ -230,112 +347,186 @@ backend/
 ```
 
 ### Database Schema
-- Users table (managed by Clerk)
-- Products table
-- Categories table
-- Orders table
-- OrderItems table
-- Cart table
-- CartItems table
+
+#### Core Tables (Shared)
+- Users table (web app users via Clerk)
+- Items table (content for both sites)
+- Categories table (navigation structure)
+
+#### Web Application Tables
+- Activities table (user activities)
+- ActivityItems table (activity details)
+- Collections table (user collections)
+- CollectionItems table (collection items)
+
+#### Landing Site Tables
+- ContactSubmissions table (form submissions)
+- NewsletterSubscriptions table (email signups)
 
 ## API Specification
 
-### Authentication Endpoints
-All endpoints require Clerk authentication token in headers.
+### Public Endpoints (No Auth Required)
+- `GET /api/public/items/featured` - Featured items for homepage
+- `GET /api/public/categories` - All categories
+- `POST /api/public/contact` - Submit contact form
+- `POST /api/public/newsletter` - Newsletter signup
 
-### Product Endpoints
-- `GET /api/products` - List all products
-- `GET /api/products/:id` - Get product details
-- `POST /api/products` - Create product (admin)
-- `PUT /api/products/:id` - Update product (admin)
-- `DELETE /api/products/:id` - Delete product (admin)
+### Authenticated Endpoints (Web App)
+- `GET /api/items` - List all items
+- `GET /api/items/:id` - Get item details
+- `GET /api/categories/:slug/items` - Items by category
+- `GET /api/collections` - User's collection
+- `POST /api/collections/items` - Add to collection
+- `PUT /api/collections/items/:id` - Update collection item
+- `DELETE /api/collections/items/:id` - Remove from collection
+- `GET /api/activities` - User's activities
+- `POST /api/activities` - Create activity
 
-### Category Endpoints
-- `GET /api/categories` - List all categories
-- `GET /api/categories/:slug/products` - Get products by category
-
-### Cart Endpoints
-- `GET /api/cart` - Get user's cart
-- `POST /api/cart/items` - Add item to cart
-- `PUT /api/cart/items/:id` - Update cart item
-- `DELETE /api/cart/items/:id` - Remove from cart
-
-### Order Endpoints
-- `GET /api/orders` - Get user's orders
-- `GET /api/orders/:id` - Get order details
-- `POST /api/orders` - Create new order
-- `PUT /api/orders/:id/status` - Update order status (admin)
+### Admin Endpoints (Admin Role Required)
+- `POST /api/items` - Create item
+- `PUT /api/items/:id` - Update item
+- `DELETE /api/items/:id` - Delete item
+- `GET /api/admin/dashboard` - Dashboard stats
+- `GET /api/admin/users` - List all users
+- `PUT /api/admin/users/:id/role` - Update user role
+- `PUT /api/activities/:id/status` - Update activity status
+- `GET /api/admin/contact-submissions` - View submissions
 
 ## Security Requirements
 
 ### Authentication & Authorization
-- Clerk handles user authentication (frontend only)
-- Backend validates JWT tokens using JWKS
-- Role-based access control (RBAC)
-- JWT tokens for API authentication
-- Secure session management
+
+#### Landing Site
+- No authentication required
+- Rate limiting on contact forms
+- CSRF protection on forms
+- Honeypot fields for bot prevention
+
+#### Web Application
+- Clerk authentication required
+- JWT tokens for API access
+- Role-based access control (USER/ADMIN)
+- Session management via Clerk
+
+#### Backend
+- JWT verification using JWKS
+- Role extraction from token claims
+- Admin middleware for protected routes
+- API key for service-to-service (future)
 
 ### Data Protection
-- Encrypt sensitive data at rest
-- Use HTTPS for all communications
-- Regular security audits
-- Implement rate limiting
+- HTTPS enforced on all domains
+- Database encryption at rest
+- Sensitive data hashing (future passwords)
+- PII data isolation and audit trails
 
-### Input Validation
-- Validate all user inputs
-- Sanitize data before storage
-- Use parameterized queries (Prisma)
-- Implement CORS properly
+### CORS Configuration
+```python
+CORS_ORIGINS = [
+    "https://yourdomain.com",      # Landing
+    "https://app.yourdomain.com",  # Web app
+    # Development origins
+    "http://localhost:3000",
+    "http://localhost:5173"
+]
+```
 
 ## Performance Requirements
 
-### Response Times
-- Homepage load: < 2 seconds
-- Product listing: < 1 second
-- Add to cart: < 500ms
-- Checkout process: < 3 seconds
+### Landing Site Performance
+- **First Contentful Paint**: < 1.5s
+- **Time to Interactive**: < 3s
+- **Lighthouse Score**: > 90
+- **Core Web Vitals**: All green
+- **Static Asset Caching**: 1 year
+- **CDN Distribution**: Global edge nodes
+
+### Web Application Performance
+- **Initial Load**: < 3s
+- **Route Changes**: < 200ms
+- **API Response**: < 300ms (p95)
+- **Collection Updates**: < 100ms
+- **Search Results**: < 500ms
+
+### Backend Performance
+- **Database Queries**: < 50ms
+- **Concurrent Users**: 1000+
+- **Request Rate**: 100 req/s
+- **Cache Hit Rate**: > 80%
 
 ### Optimization Strategies
-- Image optimization and WebP format
-- Lazy loading for images
-- Code splitting and dynamic imports
-- Browser caching headers
-- Database query optimization
-- Redis caching for frequently accessed data
 
-### Monitoring
-- Application Performance Monitoring (APM)
-- Error tracking with Sentry
-- Uptime monitoring
-- Database performance metrics
-- User experience metrics
+#### Landing Site
+- Static generation for all pages
+- Image optimization pipeline
+- Critical CSS inlining
+- Minimal JavaScript bundle
+- Preconnect to API domain
+
+#### Web Application  
+- Route-based code splitting
+- Component lazy loading
+- Virtual scrolling for lists
+- Optimistic UI updates
+- Service worker caching
+
+#### Shared
+- WebP images with fallbacks
+- Brotli compression
+- HTTP/2 push for critical resources
+- Database query optimization
+- Redis caching strategy
 
 ## Deployment Strategy
 
-### Docker Organization
-```
-docker/
-├── nginx/                  # Nginx configuration
-│   ├── nginx.conf         # Main Nginx config
-│   └── conf.d/           # Additional configs
-├── postgres/             # PostgreSQL configs (optional)
-└── volumes/              # Persistent data (git-ignored)
-    ├── postgres/        # Database files
-    ├── redis/          # Cache data
-    ├── pgadmin/        # pgAdmin settings
-    └── uploads/        # User uploads
-```
+### Multi-Environment Architecture
 
-### Container Architecture
-- **Runtime-only configuration**: No build configs in docker-compose.yml
-- **Pre-built images**: Build images separately before deployment
-- **Bind mount volumes**: Easy backup and data management
-- **Service orchestration**: All services managed through Docker Compose
-- **Nginx reverse proxy**: Routes traffic to appropriate services
+#### Development
+- **Landing**: `http://localhost:3000`
+- **Web App**: `http://localhost:5173`
+- **Backend**: `http://localhost:5000`
+- **Database**: Local PostgreSQL
+- **Tools**: Docker Compose, hot reload
 
-### Development Workflow
-1. Build Docker images for frontend and backend
-2. Use docker-compose.yml for runtime orchestration
-3. All persistent data stored in `docker/volumes/`
-4. Volume backups handled through tar archives
-5. Easy restoration from backup files
+#### Staging
+- **Landing**: `staging.yourdomain.com`
+- **Web App**: `app-staging.yourdomain.com`
+- **Backend**: Shared with web app
+- **Database**: Staging PostgreSQL
+- **Purpose**: Pre-production testing
+
+#### Production
+- **Landing**: `yourdomain.com` (Vercel/Netlify)
+- **Web App**: `app.yourdomain.com` (Cloud provider)
+- **Backend**: `app.yourdomain.com/api`
+- **Database**: Managed PostgreSQL (RDS/CloudSQL)
+- **CDN**: CloudFlare for all domains
+
+### Deployment Workflow
+
+1. **Landing Site**
+   - Push to main branch
+   - Vercel auto-deploys
+   - Instant global distribution
+   
+2. **Web Application**
+   - Push to main branch
+   - CI/CD builds Docker image
+   - Deploy to cloud provider
+   - Health checks before switch
+   
+3. **Backend API**
+   - Same as web application
+   - Database migrations first
+   - Rolling deployment
+
+### Infrastructure as Code
+```terraform
+# Example Terraform structure
+modules/
+├── landing/        # S3 + CloudFront
+├── web-app/        # ECS/K8s + ALB
+├── backend/        # Shared with web-app
+├── database/       # RDS PostgreSQL
+└── networking/     # VPC, subnets, security groups
+```

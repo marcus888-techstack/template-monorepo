@@ -1,17 +1,24 @@
-# 🥐 Delicious Bakery Website
+# Full-Stack Web Application Template
 
-A modern, full-stack e-commerce website for a bakery built with React, FastAPI, TypeScript, Prisma, and PostgreSQL. Features a beautiful UI inspired by the Figma design with product catalog, shopping cart, and order management.
+A modern, full-stack web application template featuring a two-part architecture: a marketing landing site and a main application with integrated admin dashboard. Built with React, FastAPI, TypeScript, Prisma, and PostgreSQL.
 
-![Bakery Website Preview](./docs/images/preview.png)
+![Application Preview](./docs/images/preview.png)
 
 ## 🚀 Features
 
+### Two-Part Architecture
+- **Landing Site** (`example.com`): Marketing-focused single-page site
+- **Web Application** (`app.example.com`): Main application with integrated admin
+- **Shared Backend**: Unified FastAPI backend serving both applications
+- **Monorepo Structure**: Organized code with shared packages
+
+### Core Features
 - **Modern Tech Stack**: React with Vite, FastAPI, TypeScript, and Tailwind CSS
-- **Authentication**: Clerk authentication in dev mode (zero configuration required)
-- **Product Management**: Browse products by categories, featured items showcase
-- **Shopping Cart**: Persistent cart with real-time updates
+- **Authentication**: Clerk authentication with JWT verification
+- **Content Management**: Browse items by categories, featured content showcase
+- **User Collections**: Persistent user selections with real-time updates
 - **Responsive Design**: Mobile-first approach with beautiful animations
-- **Admin Panel**: Manage products, orders, and users
+- **Admin Dashboard**: Integrated admin panel at `/admin` routes
 - **Database**: PostgreSQL with Prisma ORM (Python)
 - **Docker Support**: Easy development setup with Docker Compose
 - **Auto Documentation**: Swagger UI and ReDoc for API exploration
@@ -25,10 +32,19 @@ A modern, full-stack e-commerce website for a bakery built with React, FastAPI, 
 
 ## 🛠️ Tech Stack
 
-### Frontend (React)
+### Landing Site (React + Vite)
+- **React 18** - UI library
+- **Vite** - Lightning-fast build tool
+- **TypeScript** - Type safety
+- **shadcn/ui** - Accessible and customizable component library
+- **Tailwind CSS** - Utility-first CSS
+- **Framer Motion** - Smooth animations
+
+### Web Application (React + Vite)
 - **React 18** - UI library
 - **Vite** - Build tool and dev server
 - **TypeScript** - Type safety
+- **shadcn/ui** - Accessible and customizable component library
 - **Tailwind CSS** - Utility-first CSS
 - **React Router v6** - Client-side routing
 - **Clerk React** - Authentication UI components
@@ -50,9 +66,17 @@ A modern, full-stack e-commerce website for a bakery built with React, FastAPI, 
 - **Uvicorn** - ASGI server
 - **Python-dotenv** - Environment variables
 
+### Shared Packages
+- **@[project]/ui** - Reusable UI components (built on shadcn/ui)
+- **@[project]/utils** - Common utilities
+- **@[project]/types** - Shared TypeScript types
+
 ### DevOps
 - **Docker** - Containerization
 - **Docker Compose** - Multi-container orchestration
+- **Nginx** - Reverse proxy for subdomain routing
+- **pnpm** - Efficient package management
+- **Turborepo** - Monorepo build system (optional)
 - **ESLint + Prettier** - Code quality
 - **Husky** - Git hooks
 
@@ -60,19 +84,33 @@ A modern, full-stack e-commerce website for a bakery built with React, FastAPI, 
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/bakery-website.git
-cd bakery-website
+git clone https://github.com/yourusername/[your-project].git
+cd [your-project]
 ```
 
 ### 2. Install dependencies
 
-#### Frontend
+#### Using pnpm (Recommended for monorepo)
 ```bash
-cd apps/frontend
+# Install all dependencies
+pnpm install
+```
+
+#### Or install individually
+
+##### Landing Site
+```bash
+cd apps/landing
 npm install
 ```
 
-#### Backend
+##### Web Application
+```bash
+cd apps/web
+npm install
+```
+
+##### Backend
 ```bash
 cd apps/backend
 python -m venv venv
@@ -82,16 +120,20 @@ pip install -r requirements.txt
 
 ### 3. Set up environment variables
 ```bash
-# In frontend directory
-cd apps/frontend
-cp .env.example .env.local
-
-# In backend directory
-cd apps/backend
+# Copy all environment files
 cp .env.example .env
+cp apps/landing/.env.example apps/landing/.env.local
+cp apps/web/.env.example apps/web/.env.local
+cp apps/backend/.env.example apps/backend/.env
 ```
 
-Frontend `.env.local`:
+Landing Site `.env.local`:
+```env
+VITE_API_URL=http://localhost:5000/api
+VITE_APP_URL=http://localhost:5173
+```
+
+Web Application `.env.local`:
 ```env
 VITE_API_URL=http://localhost:5000/api
 VITE_CLERK_PUBLISHABLE_KEY=pk_test_Y2xlcmsuZGV2JA  # Clerk dev mode key
@@ -99,20 +141,24 @@ VITE_CLERK_PUBLISHABLE_KEY=pk_test_Y2xlcmsuZGV2JA  # Clerk dev mode key
 
 Backend `.env`:
 ```env
-DATABASE_URL="postgresql://bakery_user:bakery_pass@localhost:5432/bakery_db"
+DATABASE_URL="postgresql://[db_user]:[db_pass]@localhost:5432/[db_name]"
 PORT=5000
 CLERK_JWKS_URL=https://your-app.clerk.accounts.dev/.well-known/jwks.json
 ```
 
 ### 4. Build Docker images
 ```bash
-# Build frontend image
-cd apps/frontend
-docker build -t bakery_frontend:latest .
+# Build landing site image
+cd apps/landing
+docker build -t [project]_landing:latest .
+
+# Build web application image
+cd ../web
+docker build -t [project]_web:latest .
 
 # Build backend image
 cd ../backend
-docker build -t bakery_backend:latest .
+docker build -t [project]_backend:latest .
 ```
 
 ### 5. Start the database
@@ -136,60 +182,97 @@ python -m scripts.seed
 
 ### 8. Start the development servers
 
-#### Terminal 1 - Backend
+#### Using pnpm (All apps)
+```bash
+# From project root
+pnpm dev
+```
+
+#### Or start individually
+
+##### Terminal 1 - Backend
 ```bash
 cd apps/backend
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 uvicorn main:app --reload --port 5000
 ```
 
-#### Terminal 2 - Frontend
+##### Terminal 2 - Landing Site
 ```bash
-cd apps/frontend
-npm run dev
+cd apps/landing
+npm run dev  # Runs on port 3000
 ```
 
-Visit [http://localhost:5173](http://localhost:5173) to see the application.
-Visit [http://localhost:5000/docs](http://localhost:5000/docs) for API documentation (Swagger UI).
-Visit [http://localhost:5000/redoc](http://localhost:5000/redoc) for alternative API documentation.
+##### Terminal 3 - Web Application
+```bash
+cd apps/web
+npm run dev  # Runs on port 5173
+```
+
+#### Access Points
+- Landing Site: [http://localhost:3000](http://localhost:3000)
+- Web Application: [http://localhost:5173](http://localhost:5173)
+- Admin Dashboard: [http://localhost:5173/admin](http://localhost:5173/admin)
+- API Documentation: [http://localhost:5000/docs](http://localhost:5000/docs)
+- Alternative API Docs: [http://localhost:5000/redoc](http://localhost:5000/redoc)
 
 ## 📁 Project Structure
 
 ```
-bakery-website/
-├── apps/
-│   ├── frontend/          # React application
+[your-project]/
+├── apps/                          # All applications (monorepo)
+│   ├── landing/                   # Marketing/Landing site
 │   │   ├── src/
-│   │   │   ├── components/    # React components
-│   │   │   ├── pages/        # Page components
-│   │   │   ├── hooks/        # Custom hooks
-│   │   │   ├── services/     # API services
-│   │   │   ├── store/        # Zustand stores
-│   │   │   ├── utils/        # Utilities
-│   │   │   └── types/        # TypeScript types
-│   │   ├── public/           # Static assets
-│   │   └── index.html        # Entry HTML
-│   └── backend/           # FastAPI application
+│   │   │   ├── components/        # Landing page components
+│   │   │   ├── App.tsx
+│   │   │   └── main.tsx
+│   │   ├── public/                # Static assets
+│   │   └── package.json
+│   ├── web/                       # Main application
+│   │   ├── src/
+│   │   │   ├── components/        # React components
+│   │   │   ├── pages/            # Page components
+│   │   │   │   └── admin/        # Admin dashboard
+│   │   │   ├── hooks/            # Custom hooks
+│   │   │   ├── services/         # API services
+│   │   │   ├── store/            # Zustand stores
+│   │   │   └── types/            # TypeScript types
+│   │   └── package.json
+│   └── backend/                   # FastAPI application
 │       ├── app/
-│       │   ├── api/          # API endpoints
-│       │   ├── core/         # Core configuration
-│       │   ├── models/       # Pydantic models
-│       │   ├── services/     # Business logic
-│       │   ├── utils/        # Utilities
-│       │   └── middleware/   # FastAPI middleware
-│       ├── prisma/           # Database schema
-│       └── main.py           # Application entry point
-├── docker/                # Docker configurations
-│   ├── nginx/            # Nginx reverse proxy
-│   └── volumes/          # Persistent data storage
-├── docs/                  # Documentation
-└── docker-compose.yml     # Docker orchestration
+│       │   ├── api/              # API endpoints
+│       │   ├── core/             # Core configuration
+│       │   ├── models/           # Pydantic models
+│       │   └── services/         # Business logic
+│       ├── prisma/               # Database schema
+│       └── main.py               # Entry point
+├── packages/                      # Shared packages
+│   ├── ui/                       # Reusable components
+│   ├── utils/                    # Common utilities
+│   └── types/                    # Shared TypeScript types
+├── docker/                        # Docker configurations
+│   ├── nginx/                    # Nginx reverse proxy
+│   └── volumes/                  # Persistent data
+├── docs/                          # Documentation
+├── docker-compose.yml             # Docker orchestration
+└── pnpm-workspace.yaml           # PNPM workspace config
 ```
 
 ## 📝 Available Scripts
 
-### Frontend
-- `npm run dev` - Start development server
+### Monorepo Scripts (from root)
+- `pnpm dev` - Start all development servers
+- `pnpm build` - Build all applications
+- `pnpm lint` - Run ESLint on all projects
+- `pnpm format` - Format all code with Prettier
+
+### Landing Site
+- `npm run dev` - Start development server (port 3000)
+- `npm run build` - Build for production
+- `npm run preview` - Preview production build
+
+### Web Application
+- `npm run dev` - Start development server (port 5173)
 - `npm run build` - Build for production
 - `npm run preview` - Preview production build
 - `npm run lint` - Run ESLint
@@ -219,8 +302,9 @@ cp .env.example .env
 2. **Build Docker images**
 ```bash
 # Build all images
-cd apps/frontend && docker build -t bakery_frontend:latest .
-cd ../backend && docker build -t bakery_backend:latest .
+cd apps/landing && docker build -t [project]_landing:latest .
+cd ../web && docker build -t [project]_web:latest .
+cd ../backend && docker build -t [project]_backend:latest .
 ```
 
 3. **Start all services**
@@ -234,7 +318,8 @@ This will start:
 - pgAdmin database GUI (port 5050)
 - Redis cache (port 6379)
 - FastAPI backend (port 5000)
-- React frontend (port 5173)
+- Landing site (port 3000)
+- Web application (port 5173)
 - Nginx reverse proxy (port 80)
 
 4. **Run database migrations**
@@ -259,8 +344,9 @@ All persistent data is stored in `docker/volumes/`:
 
 ```bash
 # Build images first (required)
-cd apps/frontend && docker build -t bakery_frontend:latest .
-cd ../backend && docker build -t bakery_backend:latest .
+cd apps/landing && docker build -t [project]_landing:latest .
+cd ../web && docker build -t [project]_web:latest .
+cd ../backend && docker build -t [project]_backend:latest .
 
 # Start services
 docker-compose up -d
@@ -295,10 +381,25 @@ Configure your database connection in backend `.env`:
 DATABASE_URL="postgresql://username:password@localhost:5432/database_name"
 ```
 
-### Clerk Authentication
-Clerk is used only on the frontend for user authentication. The backend verifies JWT tokens without Clerk SDK.
+### Architecture Decision
+This project uses a two-part architecture pattern:
 
-Frontend (Dev Mode):
+1. **Landing Site** (`example.com`)
+   - Marketing-focused single-page site
+   - Optimized for SEO and conversion
+   - Built with React + Vite for consistency
+   - Can be deployed to Vercel/Netlify
+
+2. **Web Application** (`app.example.com`)
+   - Main user application
+   - Integrated admin dashboard at `/admin`
+   - Protected routes for authenticated users
+   - Deployed to cloud provider
+
+### Clerk Authentication
+Clerk is used in the web application for user authentication. The backend verifies JWT tokens without Clerk SDK.
+
+Web Application:
 ```env
 VITE_CLERK_PUBLISHABLE_KEY=pk_test_Y2xlcmsuZGV2JA
 ```
@@ -308,7 +409,7 @@ Backend JWT Verification:
 CLERK_JWKS_URL=https://your-app.clerk.accounts.dev/.well-known/jwks.json
 ```
 
-Note: In dev mode, you can use the test publishable key. In production, create a Clerk account and update both the publishable key and JWKS URL.
+Note: The landing site doesn't require authentication. In production, create a Clerk account and update both the publishable key and JWKS URL.
 
 ## 📚 Documentation
 
@@ -317,6 +418,7 @@ Note: In dev mode, you can use the test publishable key. In production, create a
 - [API Documentation](./docs/API.md) - API endpoints reference
 - [Architecture](./docs/ARCHITECTURE.md) - System design and architecture
 - [UI Specification](./docs/UI-SPEC.md) - Design system and components
+- [Admin Dashboard](./docs/ADMIN_DASHBOARD.md) - Admin panel documentation
 - [Deployment Guide](./docs/DEPLOYMENT.md) - Production deployment instructions
 
 ## 🧪 Testing
@@ -336,9 +438,16 @@ npm run test:coverage
 
 See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
 
-### Quick Deploy to Vercel
+### Quick Deploy
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/bakery-website)
+#### Landing Site (Vercel)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/[your-project]&root-directory=apps/landing)
+
+#### Web Application (Vercel)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/[your-project]&root-directory=apps/web)
+
+#### Backend (Railway)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/yourusername/[your-project])
 
 ## 🤝 Contributing
 
@@ -354,10 +463,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- Design inspired by [Bakery Website UI Figma](https://www.figma.com/design/3qSw3ALIPtBzR3NWr0PR3h/)
 - Icons from [Heroicons](https://heroicons.com/)
 - Images from [Unsplash](https://unsplash.com/)
 
 ## 📞 Support
 
-For support, email support@deliciousbakery.com or open an issue in this repository.
+For support, email support@[your-domain].com or open an issue in this repository.
